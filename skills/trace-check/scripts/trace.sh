@@ -6,7 +6,7 @@
 #
 # 用法:
 #   trace.sh check  [--include-design] [--feature <name>]
-#   trace.sh bind   [--feature <name>]
+#   trace.sh bind   [--dry-run] [--feature <name>]
 #   trace.sh verify [--feature <name>]
 #
 # Exit code: 0=通過  1=有缺口  2=執行錯誤
@@ -19,6 +19,7 @@ set -euo pipefail
 SPECS_DIR="${SPECS_DIR:-.kiro/specs}"
 FEATURE=""
 INCLUDE_DESIGN=0
+DRY_RUN=0
 
 die() { printf '{"error":"%s"}\n' "$1" >&2; exit 2; }
 
@@ -31,6 +32,7 @@ esac
 while [ $# -gt 0 ]; do
   case "$1" in
     --include-design) INCLUDE_DESIGN=1; shift ;;
+    --dry-run) DRY_RUN=1; shift ;;
     --feature) FEATURE="${2:-}"; shift 2 ;;
     *) die "unknown option: $1" ;;
   esac
@@ -77,6 +79,7 @@ FEATURE_GLOB="$SPEC_PATH/features"
 REQ_FILE="$SPEC_PATH/requirements.md"
 GRILL_FILE="$SPEC_PATH/grill-notes.md"
 DESIGN_FILE="$SPEC_PATH/design.md"
+TASKS_FILE="$SPEC_PATH/tasks.md"
 
 json_escape() {
   # 轉義 JSON 字串內容：反斜線、雙引號、控制字元
@@ -253,17 +256,178 @@ JSON
   return $rc
 }
 
+# ---------------------------------------------------------------
+# bind
+#
+# 映射是機械的，不是語意判斷：cc-sdd 每個 sub-task 都帶
+# `_Requirements: X.X_`（tasks-generation.md 的 Checkbox Format），
+# 與 scenario 的 @REQ 取交集即可。
+#
+#   task 4.1  _Requirements: 3.1, 3.2_
+#             ∩  SCN-042 @REQ-3.1
+#             →  _DoD: SCN-042 由紅轉綠_
+#
+# 冪等：既有的 _DoD:_ 行會被重算後取代，不會累積。
+# ---------------------------------------------------------------
+
+# 每列 = "task_id <TAB> requirements(逗號分隔，可能為空)"
+parse_tasks() {
+  awk '
+    function flush() { if (tid != "") print tid "\t" reqs }
+    # 子任務： - [ ] 4.1 描述     （X.Y 編號才是執行單位）
+    /^[[:space:]]*-[[:space:]]*\[[ xX]\]\*?[[:space:]]+[0-9]+\.[0-9]+/ {
+        flush()
+        match($0, /[0-9]+\.[0-9]+/); tid = substr($0, RSTART, RLENGTH); reqs = ""
+        next
+    }
+    # 主任務標頭： - [ ] 4. 描述  （分組用，不是執行單位）
+    /^[[:space:]]*-[[:space:]]*\[[ xX]\]\*?[[:space:]]+[0-9]+\./ {
+        flush(); tid = ""; reqs = ""; next
+    }
+    /_Requirements:/ {
+        if (tid != "") {
+            l = $0
+            sub(/.*_Requirements:[[:space:]]*/, "", l)
+            sub(/_.*$/, "", l)
+            gsub(/[[:space:]]/, "", l)
+            reqs = l
+        }
+    }
+    END { flush() }
+  ' "$TASKS_FILE"
+}
+
+run_bind() {
+  [ -f "$TASKS_FILE" ] || die "tasks.md not found: $TASKS_FILE — 先跑 /kiro-spec-tasks"
+  [ -d "$FEATURE_GLOB" ] || die "features dir not found: $FEATURE_GLOB — 先跑 /scenario-write"
+  compgen -G "$FEATURE_GLOB/*.feature" >/dev/null \
+    || die "no .feature under $FEATURE_GLOB — 先跑 /scenario-write"
+
+  local scenarios
+  scenarios="$(parse_scenarios)"
+  [ -n "$scenarios" ] || die "解析不到任何 Scenario —— 確認 tag 與 Scenario 相鄰且寫在同一行"
+
+  # scenario → 它涵蓋的需求。每列 = "SCN-nnn <TAB> req,req"
+  local scn_map
+  scn_map="$(printf '%s\n' "$scenarios" | awk -F'\t' '
+    {
+      scn = ""; reqs = ""
+      n = split($1, t, /[[:space:]]+/)
+      for (i = 1; i <= n; i++) {
+        if (t[i] ~ /^@SCN-[0-9]+$/) { scn = substr(t[i], 2) }
+        else if (t[i] ~ /^@REQ-[0-9]+\.[0-9]+$/) {
+          reqs = (reqs == "" ? "" : reqs ",") substr(t[i], 6)
+        }
+      }
+      if (scn != "" && reqs != "") print scn "\t" reqs
+    }' | sort -u -V)"
+
+  local tasks
+  tasks="$(parse_tasks)"
+  [ -n "$tasks" ] || die "在 $TASKS_FILE 找不到任何 X.Y 子任務 —— 確認 tasks.md 的 checkbox 格式"
+
+  local bindings=() no_reqs=() no_scn=() plan_file
+  plan_file="$(mktemp)"
+  trap 'rm -f "$plan_file"' RETURN
+
+  local tid treqs
+  while IFS=$'\t' read -r tid treqs; do
+    [ -n "$tid" ] || continue
+    if [ -z "$treqs" ]; then
+      no_reqs+=("$tid")
+      continue
+    fi
+    # 取交集：task 的需求 ∩ 各 scenario 的 @REQ
+    local matched=()
+    local scn sreqs
+    while IFS=$'\t' read -r scn sreqs; do
+      [ -n "$scn" ] || continue
+      local r
+      local IFS_SAVE="$IFS"; IFS=','
+      for r in $treqs; do
+        case ",$sreqs," in
+          *",$r,"*) matched+=("$scn"); break ;;
+        esac
+      done
+      IFS="$IFS_SAVE"
+    done <<< "$scn_map"
+
+    if [ ${#matched[@]} -eq 0 ]; then
+      no_scn+=("$tid ($treqs)")
+      continue
+    fi
+    local joined
+    # paste -d 接受的是「循環使用的單字元清單」，不是分隔字串，
+    # 所以 -d', ' 會交替用逗號與空白。先用逗號接，再補空白。
+    joined="$(printf '%s\n' "${matched[@]}" | sort -u -V | paste -sd',' - | sed 's/,/, /g')"
+    printf '%s\t%s\n' "$tid" "$joined" >> "$plan_file"
+    bindings+=("{\"task\":\"$(json_escape "$tid")\",\"requirements\":\"$(json_escape "$treqs")\",\"scenarios\":\"$(json_escape "$joined")\"}")
+  done <<< "$tasks"
+
+  # --- 寫入
+  if [ "$DRY_RUN" -eq 0 ] && [ -s "$plan_file" ]; then
+    local tmp; tmp="$(mktemp)"
+    awk -v plan="$plan_file" '
+      BEGIN {
+        while ((getline l < plan) > 0) { split(l, a, "\t"); dod[a[1]] = a[2] }
+      }
+      /^[[:space:]]*-[[:space:]]*\[[ xX]\]\*?[[:space:]]+[0-9]+\.[0-9]+/ {
+          match($0, /[0-9]+\.[0-9]+/); tid = substr($0, RSTART, RLENGTH)
+          print; next
+      }
+      /^[[:space:]]*-[[:space:]]*\[[ xX]\]\*?[[:space:]]+[0-9]+\./ { tid = ""; print; next }
+      # 既有的 DoD 行一律丟棄，稍後重算後重寫（冪等）
+      /^[[:space:]]*-[[:space:]]*_DoD:/ { next }
+      /_Requirements:/ {
+          print
+          if (tid != "" && tid in dod) {
+              indent = $0; sub(/[^[:space:]].*$/, "", indent)
+              printf "%s- _DoD: %s 由紅轉綠_\n", indent, dod[tid]
+          }
+          next
+      }
+      { print }
+    ' "$TASKS_FILE" > "$tmp" && mv "$tmp" "$TASKS_FILE"
+  fi
+
+  local n_tasks n_bound verdict rc
+  n_tasks=$(printf '%s\n' "$tasks" | grep -c . || true)
+  n_bound=${#bindings[@]}
+  verdict="PASS"; rc=0
+  if [ ${#no_reqs[@]} -gt 0 ] || [ ${#no_scn[@]} -gt 0 ]; then
+    verdict="FAIL"; rc=1
+  fi
+
+  local b_json="[" first=1 b
+  for b in ${bindings[@]+"${bindings[@]}"}; do
+    [ $first -eq 1 ] || b_json+=","
+    b_json+="$b"; first=0
+  done
+  b_json+="]"
+
+  cat <<JSON
+{
+  "feature": "$(json_escape "$FEATURE")",
+  "mode": "bind",
+  "dry_run": $([ "$DRY_RUN" -eq 1 ] && echo true || echo false),
+  "counts": { "tasks": $n_tasks, "bound": $n_bound },
+  "bindings": $b_json,
+  "gaps": {
+    "task_without_requirements": $(json_array "${no_reqs[@]+"${no_reqs[@]}"}"),
+    "task_without_scenario": $(json_array "${no_scn[@]+"${no_scn[@]}"}")
+  },
+  "verdict": "$verdict"
+}
+JSON
+  return $rc
+}
+
 case "$MODE" in
   check)
     run_check
     ;;
   bind)
-    # 映射是機械的：cc-sdd 每個 sub-task 都帶 _Requirements: X.X_
-    # （tasks-generation.md 的 Checkbox Format），與 scenario 的 @REQ 取交集即可。
-    echo "TODO: 讀 tasks.md 的 _Requirements:_，與 @REQ 取交集，寫入 _DoD: SCN-xxx 由紅轉綠_" >&2
-    echo "TODO: 交集為空的 task 要特別標出" >&2
-    echo "--- bind 尚未實作，回傳 2 以免被誤判為通過 ---" >&2
-    exit 2
+    run_bind
     ;;
   verify)
     echo "TODO: git diff 檢查 .feature 在實作階段是否被修改（依 @SCN 歸因）" >&2

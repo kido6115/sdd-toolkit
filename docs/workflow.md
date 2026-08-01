@@ -159,15 +159,19 @@ BC-04「目標儲存空間不足」
 
 ```
 /kiro-spec-tasks
-/trace-bind
+/trace-bind                 # 先 dry-run 給你看，同意才寫
 ```
 
-trace-bind 是**寫入**不是檢查——把每個 task 綁上它要點亮的 scenario：
+trace-bind 是**寫入**不是檢查。映射走 cc-sdd 既有的 `_Requirements:_`
+標註，取交集，不是語意判斷：
 
 ```
-4.1  實作分頁匯出   → SCN-042, SCN-043
-7.2  session 續期   → SCN-051
+- [ ] 2.1 (P) 實作分頁匯出
+  - _Requirements: 3.1, 3.2_
++ - _DoD: SCN-042, SCN-043, SCN-051 由紅轉綠_
 ```
+
+冪等——scenario 增修之後重跑一次即可同步，不會累積重複行。
 
 綁定後，每個 task 的 DoD 從「agent 說寫完了」變成
 「這兩條 scenario 由紅轉綠」——機器裁決，不是自我宣稱。
