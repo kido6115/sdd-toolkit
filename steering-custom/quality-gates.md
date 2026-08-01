@@ -19,10 +19,14 @@
 |---|---|---|
 | REQ → scenario | 100%（無例外） | `trace-check` |
 | scenario → REQ | 100%（不允許孤兒 scenario） | `trace-check` |
-| scenario → task | 100% | `trace-bind` |
+| scenario → task 綁定完整 | 100% | `trace-verify` |
 | scenario 未被竄改 | 100% | `trace-verify` |
 
 追溯沒有「大致上」，缺一條就是缺口。
+
+> `trace-bind` **不在此表**——它是寫入操作，負責**建立**綁定，不負責判定。
+> 綁定是否仍完整由 `trace-verify` 在收尾時認定。
+> 一個會改檔案的步驟不該同時當自己的閘門。
 
 > 「需求 → 設計」「需求 → task」的涵蓋度**不在此表**，由 cc-sdd 的
 > `kiro-validate-impl`（F. Requirements Coverage / G. Design Alignment）認定。

@@ -1,6 +1,6 @@
 ---
 name: trace-check
-description: 檢查 EARS 需求與 Gherkin scenario 的對應是否完整，找出沒有測試的需求與沒有需求的孤兒 scenario。在 kiro-spec-requirements 之後、進入 design 之前執行。加上 --include-design 時一併檢查 design.md 是否涵蓋所有 scenario。
+description: 檢查 requirements.md 的驗收條件（N.M）與 Gherkin scenario 的 @REQ tag 對應是否完整，找出沒有測試的需求與沒有需求的孤兒 scenario。在 kiro-spec-requirements 之後、進入 design 之前執行。加上 --include-design 時一併檢查 design.md 是否涵蓋所有 scenario。
 ---
 
 執行 `${CLAUDE_SKILL_DIR}/scripts/trace.sh check $ARGUMENTS`，

@@ -23,7 +23,8 @@ cc-sdd 已負責的，本檔不重述：
 
 ## Rules
 
-1. 每一條 EARS 驗收條件**至少**對應一個 Gherkin scenario。
+1. `requirements.md` 的每一條驗收條件（`N.M`）**至少**對應一個
+   Gherkin scenario，以 `@REQ-N.M` 標註。
    沒有對應的需求視為未完成，不得進入 design 階段。
 
 2. Gherkin 是可執行的測試，不是文件。`.feature` 檔若沒有對應的

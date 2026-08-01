@@ -94,7 +94,8 @@ boundary violation，cc-sdd 的 `kiro-review` 會抓。
 > 涵蓋度，全部檢過才寫檔，最多兩輪自我修復。
 > 本 toolkit 原有的 `ears-checklist` 因此已刪除，見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
 >
-> `trace-check` 驗的是它管不到的那一軸：EARS 與 scenario 的雙向對應。
+> `trace-check` 驗的是它管不到的那一軸：驗收條件（`N.M`）與 scenario
+> 的 `@REQ-N.M` tag 雙向對應。
 
 trace-check 輸出範例：
 

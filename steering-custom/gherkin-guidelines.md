@@ -310,10 +310,18 @@ cc-sdd 在四個地方強制數字 ID：`requirements-review-gate`（退回非�
 一條需求通常對多條 scenario（正常路徑、邊界、失敗路徑）：
 
 ```gherkin
-@SCN-042 @REQ-3.1            # 正常路徑
-@SCN-043 @REQ-3.1            # 邊界：剛好 10000 筆
-@SCN-044 @REQ-3.1 @REQ-5.2   # 失敗路徑，同時驗到權限需求
+@SCN-042 @REQ-3.1
+Scenario: 匯出超過一萬筆時分頁處理
+
+@SCN-043 @REQ-3.1
+Scenario: 匯出剛好一萬筆時不分頁
+
+@SCN-044 @REQ-3.1 @REQ-5.2
+Scenario: 匯出時使用者被降權
 ```
+
+三條分別是正常路徑、邊界、失敗路徑。標題自己說清楚，不靠註解——
+上游 `SHOULD avoid comments; the scenario text should be self-explanatory`。
 
 流水號天然支援兩個方向。要在中間插一條就用下一個號，不需要 `3.1b2` 這種東西。
 

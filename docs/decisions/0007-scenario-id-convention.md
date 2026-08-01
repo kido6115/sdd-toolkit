@@ -80,10 +80,18 @@ agent 順手改個標題，竄改偵測就失效——而它本來就在改那�
 ### 附帶好處：一對多
 
 ```gherkin
-@SCN-042 @REQ-3.1            # 正常路徑
-@SCN-043 @REQ-3.1            # 邊界：剛好 10000 筆
-@SCN-044 @REQ-3.1 @REQ-5.2   # 失敗路徑，同時驗到權限需求
+@SCN-042 @REQ-3.1
+Scenario: 匯出超過一萬筆時分頁處理
+
+@SCN-043 @REQ-3.1
+Scenario: 匯出剛好一萬筆時不分頁
+
+@SCN-044 @REQ-3.1 @REQ-5.2
+Scenario: 匯出時使用者被降權
 ```
+
+三條分別是正常路徑、邊界、失敗路徑。標題自己說清楚，不靠註解——
+上游 `SHOULD avoid comments; the scenario text should be self-explanatory`。
 
 一條需求對多條 scenario 是常態。從 REQ 衍生要處理 `3.1a/3.1b`，
 中間插一條就得寫 `3.1b2`。流水號沒這問題。

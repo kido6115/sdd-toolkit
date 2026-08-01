@@ -128,7 +128,17 @@ implementer 自己挑的測試——它自己寫的、自己知道能過的。�
 
 問：**scenario 在實作過程中被動過手腳嗎？**
 
-這是最重要的一道，因為它抓的東西前面全部看不到。
+這道有兩層。`.feature` 住在 spec 樹，落在所有 task 的 `_Boundary:_` 之外，
+所以 implementer 一動它，**cc-sdd 自己就會先報**：
+
+```
+kiro-review  VERDICT: REJECTED
+  Boundary Violation: 修改了 .kiro/specs/export/features/export.feature
+  該路徑不在 task 4.1 的 _Boundary:_ src/export/ 範圍內
+```
+
+那句話說的是「你不該碰那個檔案」。`trace-verify` 補的是另一句——
+**「你把哪條驗收條件放寬了」**。前者是權限問題，後者是語意問題。
 
 ```
 ⚠️ SCN-042 在實作階段被修改
@@ -146,7 +156,8 @@ exit 1，需人工確認
 實作時測試過不了，agent 把斷言拿掉——**現在測試綠了，追溯鏈完整，
 覆蓋率 100%**。
 
-只有比對 git diff 才抓得到。
+只有比對 git diff 才抓得到——`kiro-review` 只知道「檔案被動了」，
+不知道動的方向是收緊還是放寬。
 
 你要判斷：這是合理的需求演進（那就回頭改 requirements），
 還是為了讓測試過關而放水（那就退回實作）。

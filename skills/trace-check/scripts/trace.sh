@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# trace.sh — EARS / scenario / design / task 四方追溯
+# trace.sh — requirements.md 的 N.M 與 Gherkin scenario 的雙向追溯
+#
+# 需求 → 設計 / 需求 → task 的涵蓋度不歸本腳本管，由 kiro-validate-impl
+# 認定（見 ADR-0005）。本腳本只做 cc-sdd 結構上沒有的 scenario 那一軸。
 #
 # 用法:
 #   trace.sh check  [--include-design] [--feature <name>]
