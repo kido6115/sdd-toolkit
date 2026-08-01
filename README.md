@@ -32,6 +32,9 @@ agent 數量是 cc-sdd 的實作細節，不是這裡的決策軸。見 [ADR-000
 結構上沒有 scenario 這一層，所以 `trace-*` 建立的不是重複的輪子。
 完整比對見 [ADR-0005](docs/decisions/0005-cc-sdd-overlap-audit.md)。
 
+追溯的 tag 慣例是 `@SCN-042 @REQ-3.1`——需求直接引用 cc-sdd 的編號，
+scenario 用不含語意的流水號。見 [ADR-0007](docs/decisions/0007-scenario-id-convention.md)。
+
 ### 已刪除
 
 - `ears-checklist` —— 與 cc-sdd 內建的 `requirements-review-gate` 完全重複，
@@ -49,7 +52,7 @@ agent 數量是 cc-sdd 的實作細節，不是這裡的決策軸。見 [ADR-000
 | task 獨立審查 | cc-sdd `kiro-review` |
 | 不實完成宣稱 | cc-sdd `kiro-verify-completion` |
 | 需求涵蓋、設計漂移、跨 task 整合 | cc-sdd `kiro-validate-impl` |
-| **EARS ↔ scenario 雙向對應** | 本 repo `trace-check` |
+| **需求 ↔ scenario 雙向對應** | 本 repo `trace-check` |
 | **task 的 DoD 綁定 scenario** | 本 repo `trace-bind` |
 | **scenario 被竄改 / tag 遺失** | 本 repo `trace-verify` |
 | **測試強度量化** | 本 repo `mutation-gate` |

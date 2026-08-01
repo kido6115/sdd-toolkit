@@ -81,7 +81,7 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 - `features/*.feature` — Gherkin
 
 ```
-/trace-check                # 驗 EARS ↔ Gherkin 對應
+/trace-check                # 驗需求 ↔ scenario 雙向對應
 ```
 
 > EARS 本身的品質**不用另外驗**。`/kiro-spec-requirements` 內部已跑過
@@ -94,10 +94,10 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 trace-check 輸出範例：
 
 ```
-EARS-003「當匯出超過 10000 筆時，系統應分頁處理」
+REQ-3.1「當匯出超過 10000 筆時，系統應分頁處理」
   → 無對應 scenario          ❌
-SCN-007「匯出時 session 過期」
-  → 無對應 EARS（孤兒）      ❌
+SCN-051「匯出時 session 過期」
+  → 無對應 REQ（孤兒）       ❌
 覆蓋率 8/10
 ```
 
@@ -135,8 +135,8 @@ SCN-007「匯出時 session 過期」
 trace-bind 是**寫入**不是檢查——把每個 task 綁上它要點亮的 scenario：
 
 ```
-TASK-04  實作分頁匯出   → SCN-003, SCN-004
-TASK-07  session 續期   → SCN-007
+4.1  實作分頁匯出   → SCN-042, SCN-043
+7.2  session 續期   → SCN-051
 ```
 
 綁定後，每個 task 的 DoD 從「agent 說寫完了」變成

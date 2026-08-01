@@ -17,8 +17,8 @@
 
 | 檢查 | 門檻 | 由誰判定 |
 |---|---|---|
-| EARS → scenario | 100%（無例外） | `trace-check` |
-| scenario → EARS | 100%（不允許孤兒 scenario） | `trace-check` |
+| REQ → scenario | 100%（無例外） | `trace-check` |
+| scenario → REQ | 100%（不允許孤兒 scenario） | `trace-check` |
 | scenario → task | 100% | `trace-bind` |
 | scenario 未被竄改 | 100% | `trace-verify` |
 

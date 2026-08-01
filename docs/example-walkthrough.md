@@ -35,7 +35,7 @@
 `features/export.feature`：
 
 ```gherkin
-@SCN-003 @EARS-003
+@SCN-042 @REQ-3.1
 Scenario: 匯出超過一萬筆時分頁處理
   Given 帳戶有 25000 筆訂單
   When 使用者匯出訂單
@@ -43,21 +43,28 @@ Scenario: 匯出超過一萬筆時分頁處理
   And 產生 3 個檔案，前兩個各 10000 筆
 ```
 
+兩種 tag 的來歷不同：
+
+- `@REQ-3.1` —— **直接引用** cc-sdd `requirements.md` 的編號，不另設別名
+- `@SCN-042` —— 流水號，不含語意。與 REQ 的序號無關（`SCN-042 → REQ-3.1`、
+  `SCN-043 → REQ-7.2` 都正常），比對是集合運算，順序不參與
+
 `.feature` 的 tag 是整條追溯鏈的支點。格式錯了，五道閘門有三道失效。
+慣例見 `.kiro/steering/gherkin-guidelines.md`。
 
 ---
 
 ## 閘門 1 — `trace-check`（requirements 之後）
 
-問：**每條 EARS 都有 scenario 嗎？每條 scenario 都有 EARS 嗎？**
+問：**每條需求都有 scenario 嗎？每條 scenario 都有需求嗎？**
 
 不通過：
 
 ```
-EARS-003.2「若 session 過期，中止並保留已完成的頁」
+REQ-3.2「若 session 過期，中止並保留已完成的頁」
   → 無對應 scenario                    ❌
-SCN-011「匯出時網路中斷」
-  → 無對應 EARS（孤兒）                ❌
+SCN-051「匯出時網路中斷」
+  → 無對應 REQ（孤兒）                  ❌
 覆蓋率 8/10
 exit 1
 ```
@@ -77,7 +84,7 @@ exit 1
 問：**每條 scenario 在設計裡有著落嗎？**
 
 ```
-SCN-003 分頁匯出
+SCN-042 分頁匯出
   → design.md 無對應章節               ❌
 exit 1
 ```
@@ -102,7 +109,7 @@ exit 1
 -   _Boundary:_ src/export/
 + - [ ] 4.1 實作分頁匯出
 +   _Boundary:_ src/export/
-+   _DoD:_ SCN-003 由紅轉綠
++   _DoD:_ SCN-042 由紅轉綠
 ```
 
 **這是整套的樞紐。**
@@ -124,7 +131,7 @@ implementer 自己挑的測試——它自己寫的、自己知道能過的。�
 這是最重要的一道，因為它抓的東西前面全部看不到。
 
 ```
-⚠️ SCN-003 在實作階段被修改
+⚠️ SCN-042 在實作階段被修改
 
   commit a3f21e9  "fix: 調整匯出測試"
 
@@ -135,7 +142,7 @@ implementer 自己挑的測試——它自己寫的、自己知道能過的。�
 exit 1，需人工確認
 ```
 
-前面對得好好的：EARS 有 scenario、scenario 有設計、task 有綁定。
+前面對得好好的：REQ 有 scenario、scenario 有設計、task 有綁定。
 實作時測試過不了，agent 把斷言拿掉——**現在測試綠了，追溯鏈完整，
 覆蓋率 100%**。
 
@@ -166,7 +173,7 @@ mutation score: 71%（門檻 60%）✅
 ```
 
 分數過了，但這個 mutant 值得看：邊界值 `total === 10000` 沒有測試涵蓋。
-SCN-003 用 25000 筆，測不到邊界。
+SCN-042 用 25000 筆，測不到邊界。
 
 每個存活的 mutant 要歸類：
 

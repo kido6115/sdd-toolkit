@@ -44,40 +44,58 @@ SPEC_PATH="$SPECS_DIR/$FEATURE"
 [ -d "$SPEC_PATH" ] || die "feature not found: $SPEC_PATH"
 
 # ---------------------------------------------------------------
-# TODO: 以下為待實作區塊。實作前需先確定兩件事：
+# ID 慣例（已定案，見 .kiro/steering/gherkin-guidelines.md）
 #
-#   1. EARS ID 慣例 —— requirements.md 裡怎麼標？
-#      候選: EARS-001 / REQ-1.1 / 無編號（需先加）
-#      下方 EARS_ID_PATTERN 依此調整。
+#   @REQ-N.M  —— 直接用 cc-sdd requirements.md 的驗收條件編號，不另設別名
+#   @SCN-NNN  —— 流水號，不含語意，單調遞增，永不重用
 #
-#   2. .feature 檔位置 —— 見 .kiro/steering/gherkin-guidelines.md 的 TODO
-#      A. $SPEC_PATH/features/*.feature
-#      B. 專案既有測試目錄
-#      下方 FEATURE_GLOB 依此調整。
+# 兩者無序號關聯。SCN-042 → REQ-2.1、SCN-043 → REQ-7.3 皆屬正常，
+# 比對為集合運算，順序不參與。
+#
+# TODO: .feature 檔位置未定 —— 見 gherkin-guidelines.md 的 TODO
+#   A. $SPEC_PATH/features/*.feature
+#   B. 專案既有測試目錄
+#   下方 FEATURE_GLOB 依此調整。
 # ---------------------------------------------------------------
 
-EARS_ID_PATTERN='EARS-[0-9]{3}'      # TODO: 確認慣例後調整
+REQ_ID_PATTERN='[0-9]+\.[0-9]+'
 FEATURE_GLOB="$SPEC_PATH/features"   # TODO: 確認位置後調整
 
-extract_ears_ids() {
-  grep -oE "$EARS_ID_PATTERN" "$SPEC_PATH/requirements.md" 2>/dev/null | sort -u
+extract_req_ids() {
+  # cc-sdd 的驗收條件編號為 N.M，出現在標題或條列項的行首。
+  # 限定行首是為了避開內文裡的版本號與小數。
+  #
+  # TODO: 對照一份真實產出的 requirements.md 驗證此 pattern。
+  #       cc-sdd 未固定驗收條件的排版（標題 / 條列 / 表格皆可能），
+  #       實測後可能需要放寬或收緊。
+  grep -oE "^[[:space:]]*(#+[[:space:]]*|[-*][[:space:]]+)?${REQ_ID_PATTERN}" \
+    "$SPEC_PATH/requirements.md" 2>/dev/null \
+    | grep -oE "$REQ_ID_PATTERN" | sort -u -V
 }
 
-extract_scenario_tags() {
-  # 依賴 gherkin-guidelines.md 約定的 @SCN-xxx @EARS-xxx tag 格式
-  grep -rhoE '@SCN-[0-9]{3}|@EARS-[0-9]{3}' "$FEATURE_GLOB" 2>/dev/null | tr -d '@' | sort -u
+extract_scn_ids() {
+  grep -rhoE '@SCN-[0-9]+' "$FEATURE_GLOB" 2>/dev/null | tr -d '@' | sort -u -V
+}
+
+extract_req_refs() {
+  # scenario tag 上引用的需求編號
+  grep -rhoE '@REQ-[0-9]+\.[0-9]+' "$FEATURE_GLOB" 2>/dev/null \
+    | sed 's/^@REQ-//' | sort -u -V
 }
 
 case "$MODE" in
   check)
-    echo "TODO: 比對 EARS ID 與 scenario tag，輸出雙向缺口 JSON"
+    echo "TODO: 雙向差集 —— extract_req_ids vs extract_req_refs，輸出缺口 JSON"
+    echo "TODO: 孤兒偵測 —— 每個 @SCN 所在 scenario 是否至少帶一個 @REQ"
+    echo "TODO: 報告需一併輸出 scenario 標題，ID 本身不可讀"
     [ "$INCLUDE_DESIGN" -eq 1 ] && echo "TODO: 一併檢查 design.md 是否涵蓋所有 scenario"
     ;;
   bind)
     echo "TODO: 寫入 tasks.md，為每個 task 標註 scenario 並改寫 DoD"
     ;;
   verify)
-    echo "TODO: 四方對應驗證 + git diff 檢查 .feature 檔在實作階段是否被修改"
+    echo "TODO: git diff 檢查 .feature 檔在實作階段是否被修改（依 @SCN 歸因）"
+    echo "TODO: tag 遺失、綁定失效、缺 step definition"
     ;;
 esac
 

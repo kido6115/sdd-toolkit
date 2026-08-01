@@ -19,11 +19,14 @@ description: 實作完成後驗證 Gherkin scenario 是否在過程中被竄改�
 章節編號，它沒有 scenario 這個概念，因此以下四項它一律抓不到：
 
 - **scenario 內容在 bind 之後被修改**——尤其是斷言被放寬
-- `.feature` 檔的 tag（`@SCN-xxx` `@EARS-xxx`）被移除，追溯鏈斷掉
+- `.feature` 檔的 tag（`@SCN-NNN` `@REQ-N.M`）被移除，追溯鏈斷掉
 - 已綁定的 scenario 在 tasks.md 中失去對應
 - scenario 有 tag 但沒有對應的 step definition（等同不存在）
 
 第一項最重要。比對 `git diff`，若 `.feature` 檔在實作階段有變更，
 逐條列出並要求使用者確認那是合理的需求演進，而非為了讓測試過關而放水。
+
+歸因靠 `@SCN-NNN`——標題改了、步驟改了，tag 不變，diff 仍可歸到同一條。
+若身分是標題，改標題就等於「舊的消失、新的出現」，竄改會被誤判為重構。
 
 不要自行判讀通過與否。
