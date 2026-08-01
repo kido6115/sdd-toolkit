@@ -3,6 +3,12 @@ name: ears-checklist
 description: 驗證 EARS 需求本身的完整性、清晰度與一致性——像是「需求的單元測試」。在 kiro-spec-requirements 產出 requirements.md 之後、trace-check 之前執行。
 ---
 
+<!-- ⚠️ 廢除候選。cc-sdd 3.0.2 的 kiro-spec-requirements 內建
+     requirements-review-gate.md，在**寫檔前**就檢過 EARS 語法、可測性、
+     數字 ID、實作細節外洩、涵蓋度、模糊語言，最多兩輪自我修復。
+     本 skill 的項目是它的子集，且是事後檢查。
+     實作前先確認是否還要做，見 docs/decisions/0005-cc-sdd-overlap-audit.md -->
+
 <!-- TODO: 抄自 GitHub Spec Kit 的 speckit.checklist prompt。
      來源：github.com/github/spec-kit 的 templates 目錄
      （不需要真的 specify init，直接讀 repo 即可）

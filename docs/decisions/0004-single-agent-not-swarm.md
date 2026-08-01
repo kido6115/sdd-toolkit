@@ -1,6 +1,15 @@
 # ADR-0004: 採 SwarmForge 精神但以單 agent 實作
 
-狀態：已決定
+狀態：已決定，**推理已於 ADR-0005 修訂**
+
+> ⚠️ 本 ADR 的核心前提「本流程是單 agent」在 cc-sdd 3.0.2 下不成立。
+> `kiro-impl` 的 autonomous 模式每個 task 派發 fresh implementer subagent、
+> 獨立 reviewer subagent，失敗時再派 fresh debugger subagent——它本身就是
+> 多 agent 編排，且 reviewer 明令不信任 implementer 的回報、自行跑 git diff。
+>
+> 結論（不自建 tmux/worktree 協調層）仍然成立，但理由變了：
+> 不是「不需要第二個 agent」，而是「第二個 agent 已經由 cc-sdd 提供，
+> 不必再疊一層」。下方「理由」段落請對照 [ADR-0005](0005-cc-sdd-overlap-audit.md) 閱讀。
 
 ## 脈絡
 

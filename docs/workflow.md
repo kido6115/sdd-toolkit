@@ -6,15 +6,27 @@
 
 ---
 
-## Phase 0 — 起手（每專案一次）
+## Phase 0 — 起手
 
 ```
-/kiro-steering
+./install.sh /path/to/project     # 本 toolkit：symlink constitution / gherkin 準則 / 品質門檻
+/kiro-steering                    # cc-sdd：產出 product.md / tech.md / structure.md
 ```
 
-產出 `.kiro/steering/` 下的規則：constitution、gherkin 準則、mutation 門檻。
-之後不再動。三份治理文件必須是**單一真相來源**——不要同時保留 Spec Kit 的
-constitution 和 SwarmForge 的 constitution，會讓 agent 不知道聽誰的。
+兩者寫進同一個 `.kiro/steering/` 目錄，但來源與生命週期不同：
+
+| 檔案 | 來源 | 更新時機 |
+|---|---|---|
+| `product.md` `tech.md` `structure.md` | `/kiro-steering` | **持續同步**。cc-sdd 定位它是 bootstrap/sync，擴充既有系統時要重跑 |
+| `constitution.md` `gherkin-guidelines.md` `quality-gates.md` | 本 toolkit 的 symlink | 改上游 repo，所有專案同時生效 |
+
+治理文件必須是**單一真相來源**——不要同時保留 Spec Kit 的 constitution
+和 SwarmForge 的 constitution，會讓 agent 不知道聽誰的。
+
+> ⚠️ `.kiro/steering/` **不會**被 Claude Code 自動載入。那是 Kiro IDE 靠
+> front-matter `inclusion: always` 做的事。在 Claude Code 底下，只有 `CLAUDE.md`
+> 會自動進 context；steering 必須由 skill 內文明確指名才會被讀到。
+> 見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
 
 ---
 
@@ -44,6 +56,7 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 ## Phase 2 — 需求
 
 ```
+/kiro-spec-init "<描述>"    # 建立 spec.json 與目錄骨架（不可略過，後續 skill 都讀 spec.json）
 /kiro-spec-requirements     # 讀 grill-notes.md
 ```
 
@@ -52,9 +65,13 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 - `features/*.feature` — Gherkin
 
 ```
-/ears-checklist             # 驗 EARS 本身的品質
 /trace-check                # 驗 EARS ↔ Gherkin 對應
 ```
+
+> `/kiro-spec-requirements` 內部已經跑過 `requirements-review-gate.md`：
+> EARS 語法、可測性、數字 ID、實作細節外洩、涵蓋度，全部檢過才寫檔，
+> 最多兩輪自我修復。**本 toolkit 的 `ears-checklist` 與它高度重複**，
+> 見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
 
 trace-check 輸出範例：
 
@@ -73,7 +90,9 @@ SCN-007「匯出時 session 過期」
 ## Phase 3 — 設計
 
 ```
+/kiro-validate-gap          # 選用：接既有系統時先做缺口分析
 /kiro-spec-design
+/kiro-validate-design       # cc-sdd 內建的設計品質互動式 review
 /trace-check --include-design
 ```
 
@@ -105,16 +124,31 @@ TASK-07  session 續期   → SCN-007
 
 ## Phase 5 — 實作（迴圈）
 
-每個 task 重複：
-
 ```
-/kiro-spec-impl TASK-04
-  1. 先跑 SCN-003, SCN-004 → 必須是紅
-  2. 實作
-  3. 再跑 → 必須是綠
+/kiro-impl <feature>        # autonomous：全部 pending task
+/kiro-impl <feature> 1.1    # manual：指定 task
 ```
 
-步驟 1 不能省。acceptance-first 要寫進 steering 強制，cc-sdd 預設不管這件事。
+autonomous 模式下，cc-sdd 每個 task 跑一輪：
+
+```
+fresh implementer subagent
+  → kiro-review（獨立 reviewer subagent，自己跑 git diff，不信 implementer 回報）
+  → APPROVED 才套 kiro-verify-completion
+  → 才打勾、才 commit
+REJECTED 兩輪 → fresh debugger subagent（乾淨 context，避免無限重試）
+```
+
+acceptance-first 由 cc-sdd 的 **Feature Flag Protocol** 強制：加旗標（預設 OFF）
+→ 寫測試，旗標 OFF 時**必須紅**（會過就是測錯東西，退回重寫）→ 開旗標實作
+→ 綠 → 移除旗標 → 仍須綠。
+
+> 早期版本的本文件寫「acceptance-first 要寫進 steering 強制，cc-sdd 預設不管」——
+> **那是錯的**，cc-sdd 3.x 管，而且比本 toolkit 原本的設計嚴。已修正，見 ADR-0005。
+
+本 toolkit 在這一段的增量只剩一件事：cc-sdd 的紅燈是**它自己寫的單元測試**，
+不是你核准的 Gherkin scenario。`trace-bind` 把 DoD 換成「指定 scenario 由紅轉綠」，
+差別在紅燈的定義權在誰手上。
 
 **這一段可以整包放手**，因為完成判定是機器的。
 
@@ -123,13 +157,19 @@ TASK-07  session 續期   → SCN-007
 ## Phase 6 — 收尾閘門
 
 ```
-/trace-verify        # 三方對應是否仍完整
+/kiro-validate-impl  # cc-sdd 的 GO / NO-GO 閘門（autonomous 模式會自動跑）
+/trace-verify        # 四方對應是否仍完整
 /mutation-gate       # 只計本次 diff 的 mutation score
 /manual-qa           # 產出人工程序，由人執行
 ```
 
 **依序跑，fail-fast。** 不要串在同一則訊息裡——trace 失敗時不該已經燒掉
 mutation test 的時間與 token。
+
+`/kiro-validate-impl` 已經做了：全測試套件、smoke boot、需求涵蓋矩陣、
+設計端到端對齊與架構漂移、跨 task 整合、boundary 稽核、殘留 TODO 與硬編密鑰。
+**它與 `trace-verify` 有實質重疊**——重疊的部分讓 cc-sdd 做，`trace-verify`
+只保留 cc-sdd 沒有的那一層（Gherkin scenario 的存在與被竄改）。見 ADR-0005。
 
 `trace-verify` 抓的是實作過程中的漂移：task 被拆了、scenario 被改了、
 出現了沒有對應需求的功能。

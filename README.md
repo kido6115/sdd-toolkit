@@ -17,20 +17,30 @@ cc-sdd 把需求變成文件的部分做得很好，但幾乎不驗證文件是�
 | 主體流程 | cc-sdd | steering / discovery / requirements / design / tasks / impl |
 | 意圖對齊 | grill-me (mattpocock) | 在 requirements 之前反覆盤問，產出 grill-notes.md |
 | Gherkin 品質 | gherkin-guidelines-for-ai | 掛進 steering |
-| 需求品質 | ears-checklist（抄自 Spec Kit checklist） | 驗 EARS 本身寫得好不好 |
-| **追溯** | trace-check / trace-bind / trace-verify | 本 repo |
+| ~~需求品質~~ | ~~ears-checklist~~ | ⚠️ 與 cc-sdd 內建的 `requirements-review-gate` 重複，待廢除 |
+| **追溯** | trace-check / trace-bind / ~~trace-verify~~ | 本 repo（verify 需縮減，見下） |
 | **測試強度** | mutation-gate | 本 repo |
 | **人工驗收** | manual-qa | 本 repo |
 
 粗體是這個 repo 真正原創的部分，其餘是接線。
 
-## 為什麼單 agent 可行
+> 對 `cc-sdd@3.0.2` 做過完整重疊稽核：Gherkin、mutation testing、人工驗收
+> 三軸在 cc-sdd 中**零命中**，是真正的增量；但 `ears-checklist` 完全重複，
+> `trace-verify` 與 `kiro-validate-impl` 大幅重疊。
+> 見 [ADR-0005](docs/decisions/0005-cc-sdd-overlap-audit.md)。
 
-SwarmForge 用 hardener 和 QA 兩個獨立 agent 做驗收。本 toolkit 把「獨立的 agent」
-換成「獨立的機器裁決」：mutation score 和 Gherkin 綠燈都不需要第二個 agent 來判定。
-紀律的來源沒有丟失，但少了一整層協調成本。
+## 為什麼不自建協調層
 
-代價是 manual-qa 那一步必須由人執行，不能省。
+SwarmForge 用 hardener 和 QA 兩個獨立 agent 做驗收。本 toolkit 不自建這層，
+因為兩個來源已經覆蓋：
+
+- **獨立 agent** —— cc-sdd 的 `kiro-impl` autonomous 模式已內建。每個 task
+  一個 fresh implementer、一個獨立 reviewer（自己跑 `git diff`，不信 implementer
+  的回報），失敗時再派 fresh debugger
+- **獨立機器裁決** —— mutation score 與 Gherkin 綠燈都不需要第二個 agent 判定
+
+代價是 manual-qa 那一步必須由人執行，不能省。cc-sdd 的 `MANUAL_VERIFY_REQUIRED`
+只是「機器測不了」的逃生口，不是驗收程序。
 
 ## 安裝
 
