@@ -24,6 +24,20 @@ cp -r skills/* .claude/skills/
 複製而非 symlink：steering 是專案記憶，一個專案的門檻調整不該波及其他專案。
 見 [ADR-0006](decisions/0006-steering-follows-cc-sdd.md)。
 
+**只有 `cp` 那兩行是每專案一次。`/kiro-steering` 不是。**
+
+它自己分兩個模式：目錄空的走 bootstrap，三份 core 都在就走 sync——
+sync 會偵測 code drift 並 additive 更新（既有的使用者修改不會被蓋掉）。
+
+重跑時機：**接既有系統之前、或前一個 feature 明顯改動了架構之後**。
+17 個 cc-sdd skill 裡有 10 個在 Step 1 讀 `product.md` / `tech.md` / `structure.md`
+（discovery、requirements、design、tasks、impl、三個 validate…，
+連 `kiro-impl` 派給 implementer subagent 的 prompt 都帶著）。
+
+> ⚠️ **沒有任何 skill 會自動觸發 `/kiro-steering`。** steering 過期
+> 等於接下來每個 feature 的每一步都吃到過期的 context，而且沒有閘門會抓到。
+> 這是目前流程中唯一完全靠人自覺的環節。
+
 > ⚠️ `.kiro/steering/` **不會**被 Claude Code 自動載入。那是 Kiro IDE 靠
 > front-matter `inclusion: always` 做的事。在 Claude Code 底下，只有 `CLAUDE.md`
 > 會自動進 context；steering 必須由 skill 內文明確指名才會被讀到。
