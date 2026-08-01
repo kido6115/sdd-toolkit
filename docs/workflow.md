@@ -9,23 +9,25 @@
 ## Phase 0 — 起手
 
 ```
-./install.sh /path/to/project     # 本 toolkit：symlink constitution / gherkin 準則 / 品質門檻
-/kiro-steering                    # cc-sdd：產出 product.md / tech.md / structure.md
+/kiro-steering                              # 產出 product.md / tech.md / structure.md
+cp steering-custom/*.md .kiro/steering/     # 補三份 cc-sdd 沒有的
+cp -r skills/* .claude/skills/
 ```
 
-兩者寫進同一個 `.kiro/steering/` 目錄，但來源與生命週期不同：
+`.kiro/steering/` 由 cc-sdd 當家，本 toolkit 只補它缺的那幾片：
 
 | 檔案 | 來源 | 更新時機 |
 |---|---|---|
 | `product.md` `tech.md` `structure.md` | `/kiro-steering` | **持續同步**。cc-sdd 定位它是 bootstrap/sync，擴充既有系統時要重跑 |
-| `constitution.md` `gherkin-guidelines.md` `quality-gates.md` | 本 toolkit 的 symlink | 改上游 repo，所有專案同時生效 |
+| `acceptance-discipline.md` `gherkin-guidelines.md` `quality-gates.md` | 本 toolkit 範本 | 複製後**由該專案自行維護**，不連回上游 |
 
-治理文件必須是**單一真相來源**——不要同時保留 Spec Kit 的 constitution
-和 SwarmForge 的 constitution，會讓 agent 不知道聽誰的。
+複製而非 symlink：steering 是專案記憶，一個專案的門檻調整不該波及其他專案。
+見 [ADR-0006](decisions/0006-steering-follows-cc-sdd.md)。
 
 > ⚠️ `.kiro/steering/` **不會**被 Claude Code 自動載入。那是 Kiro IDE 靠
 > front-matter `inclusion: always` 做的事。在 Claude Code 底下，只有 `CLAUDE.md`
 > 會自動進 context；steering 必須由 skill 內文明確指名才會被讀到。
+> 目前只有 `quality-gates.md` 有載入路徑（`mutation-gate` 指名它）。
 > 見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
 
 ---
@@ -68,10 +70,12 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 /trace-check                # 驗 EARS ↔ Gherkin 對應
 ```
 
-> `/kiro-spec-requirements` 內部已經跑過 `requirements-review-gate.md`：
-> EARS 語法、可測性、數字 ID、實作細節外洩、涵蓋度，全部檢過才寫檔，
-> 最多兩輪自我修復。**本 toolkit 的 `ears-checklist` 與它高度重複**，
-> 見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
+> EARS 本身的品質**不用另外驗**。`/kiro-spec-requirements` 內部已跑過
+> `requirements-review-gate.md`：EARS 語法、可測性、數字 ID、實作細節外洩、
+> 涵蓋度，全部檢過才寫檔，最多兩輪自我修復。
+> 本 toolkit 原有的 `ears-checklist` 因此已刪除，見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
+>
+> `trace-check` 驗的是它管不到的那一軸：EARS 與 scenario 的雙向對應。
 
 trace-check 輸出範例：
 
@@ -98,7 +102,11 @@ SCN-007「匯出時 session 過期」
 
 檢查每條 scenario 是否都有對應的設計決策。
 
-> 註：這一層原本考慮抄 Spec Kit 的 `analyze`，後改為併入 trace。
+> 「需求 ↔ 設計」的一致性分析**不由 trace 做**——那是 `kiro-validate-design`
+> 與 Phase 6 的 `kiro-validate-impl` 的職責。`--include-design` 只問一件事：
+> scenario 這一層有沒有被設計遺漏。
+>
+> 原本計畫抄 Spec Kit 的 `analyze` 併進 trace，該決策已修訂，
 > 見 [ADR-0003](decisions/0003-fold-analyze-into-trace.md)。
 
 ---
@@ -143,12 +151,10 @@ acceptance-first 由 cc-sdd 的 **Feature Flag Protocol** 強制：加旗標（�
 → 寫測試，旗標 OFF 時**必須紅**（會過就是測錯東西，退回重寫）→ 開旗標實作
 → 綠 → 移除旗標 → 仍須綠。
 
-> 早期版本的本文件寫「acceptance-first 要寫進 steering 強制，cc-sdd 預設不管」——
-> **那是錯的**，cc-sdd 3.x 管，而且比本 toolkit 原本的設計嚴。已修正，見 ADR-0005。
-
-本 toolkit 在這一段的增量只剩一件事：cc-sdd 的紅燈是**它自己寫的單元測試**，
-不是你核准的 Gherkin scenario。`trace-bind` 把 DoD 換成「指定 scenario 由紅轉綠」，
-差別在紅燈的定義權在誰手上。
+本 toolkit 在這一段的增量只剩一件事，但它是關鍵的一件：
+**cc-sdd 的紅燈是 implementer 自己寫的測試**——它自己挑的、自己知道能過的。
+`trace-bind` 把 DoD 換成「指定 scenario 由紅轉綠」，
+差別在紅燈的定義權在誰手上。見 `acceptance-discipline.md` 第 3 條。
 
 **這一段可以整包放手**，因為完成判定是機器的。
 
@@ -158,21 +164,21 @@ acceptance-first 由 cc-sdd 的 **Feature Flag Protocol** 強制：加旗標（�
 
 ```
 /kiro-validate-impl  # cc-sdd 的 GO / NO-GO 閘門（autonomous 模式會自動跑）
-/trace-verify        # 四方對應是否仍完整
+/trace-verify        # scenario 有沒有被竄改
 /mutation-gate       # 只計本次 diff 的 mutation score
 /manual-qa           # 產出人工程序，由人執行
 ```
 
-**依序跑，fail-fast。** 不要串在同一則訊息裡——trace 失敗時不該已經燒掉
+**依序跑，fail-fast。** 不要串在同一則訊息裡——前一道失敗時不該已經燒掉
 mutation test 的時間與 token。
 
-`/kiro-validate-impl` 已經做了：全測試套件、smoke boot、需求涵蓋矩陣、
+`/kiro-validate-impl` 負責：全測試套件、smoke boot、需求涵蓋矩陣、
 設計端到端對齊與架構漂移、跨 task 整合、boundary 稽核、殘留 TODO 與硬編密鑰。
-**它與 `trace-verify` 有實質重疊**——重疊的部分讓 cc-sdd 做，`trace-verify`
-只保留 cc-sdd 沒有的那一層（Gherkin scenario 的存在與被竄改）。見 ADR-0005。
+**這些 `trace-verify` 一律不重複做。**
 
-`trace-verify` 抓的是實作過程中的漂移：task 被拆了、scenario 被改了、
-出現了沒有對應需求的功能。
+`trace-verify` 只抓 cc-sdd 結構上看不見的那一層：scenario 在 bind 之後被修改
+（尤其是斷言被放寬）、`.feature` 的 tag 被移除、綁定失效、scenario 沒有
+對應的 step definition。
 
 ---
 
@@ -182,7 +188,7 @@ mutation test 的時間與 token。
 |---|---|---|
 | requirements 後 | check | 需求沒測到 / 測了沒需求 |
 | tasks 後 | bind | 建立綁定，定義 DoD |
-| impl 後 | verify | 過程中的漂移 |
+| impl 後 | verify | scenario 被竄改 / tag 遺失 / 綁定失效 |
 
 **只做第一次是最常見的偷懶**，那樣它就退化成一次性檢查。
 

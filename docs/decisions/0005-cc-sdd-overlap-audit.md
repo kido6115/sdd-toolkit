@@ -1,6 +1,6 @@
 # ADR-0005: 與 cc-sdd 3.0.2 的重疊稽核
 
-狀態：已決定（部分待定，見文末）
+狀態：已決定並已執行
 
 ## 脈絡
 
@@ -105,9 +105,13 @@ subagent、一個獨立 reviewer subagent、失敗時一個 fresh debugger subag
 選項從來不是「單 agent vs SwarmForge」，而是「cc-sdd 已有的 subagent 編排
 vs 再疊一層自己的」。ADR-0004 的**結論**仍成立（不自建協調層），但推理需重寫。
 
-## 待定
+## 已執行
 
-1. `ears-checklist` 直接刪除，或保留為薄殼只做 `requirements-review-gate`
-   未涵蓋的部分（目前看不出有哪部分）
-2. `trace-verify` 縮減後，`quality-gates.md` 的四項追溯門檻中
-   「scenario → design」「scenario → task」是否轉由 `kiro-validate-impl` 認定
+1. `skills/ears-checklist/` — **已刪除**
+2. `trace-verify` — **已縮減**為只驗 Gherkin 層（scenario 竄改、tag 遺失、
+   綁定失效、缺 step definition），並要求先跑 `/kiro-validate-impl`
+3. `quality-gates.md` 的追溯門檻 — 「需求 → 設計」「需求 → task」**已移除**，
+   轉由 `kiro-validate-impl` 認定；trace 只保留 EARS ↔ scenario 那一軸
+4. `constitution.md` — **已更名**為 `acceptance-discipline.md`，
+   重複條文刪除，見 [ADR-0006](0006-steering-follows-cc-sdd.md)
+5. ADR-0003、ADR-0004 — 已加修訂註記

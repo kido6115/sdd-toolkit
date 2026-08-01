@@ -50,7 +50,7 @@ SPEC_PATH="$SPECS_DIR/$FEATURE"
 #      候選: EARS-001 / REQ-1.1 / 無編號（需先加）
 #      下方 EARS_ID_PATTERN 依此調整。
 #
-#   2. .feature 檔位置 —— 見 steering/gherkin-guidelines.md 的 TODO
+#   2. .feature 檔位置 —— 見 .kiro/steering/gherkin-guidelines.md 的 TODO
 #      A. $SPEC_PATH/features/*.feature
 #      B. 專案既有測試目錄
 #      下方 FEATURE_GLOB 依此調整。

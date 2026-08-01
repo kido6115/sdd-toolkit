@@ -1,15 +1,6 @@
-# ADR-0004: 採 SwarmForge 精神但以單 agent 實作
+# ADR-0004: 取 SwarmForge 的驗收紀律，不取其協調架構
 
-狀態：已決定，**推理已於 ADR-0005 修訂**
-
-> ⚠️ 本 ADR 的核心前提「本流程是單 agent」在 cc-sdd 3.0.2 下不成立。
-> `kiro-impl` 的 autonomous 模式每個 task 派發 fresh implementer subagent、
-> 獨立 reviewer subagent，失敗時再派 fresh debugger subagent——它本身就是
-> 多 agent 編排，且 reviewer 明令不信任 implementer 的回報、自行跑 git diff。
->
-> 結論（不自建 tmux/worktree 協調層）仍然成立，但理由變了：
-> 不是「不需要第二個 agent」，而是「第二個 agent 已經由 cc-sdd 提供，
-> 不必再疊一層」。下方「理由」段落請對照 [ADR-0005](0005-cc-sdd-overlap-audit.md) 閱讀。
+狀態：已決定（原標題為「以單 agent 實作」，經 ADR-0005 重寫）
 
 ## 脈絡
 
@@ -17,29 +8,45 @@ SwarmForge（unclebob/swarm-forge）以 tmux + git worktree 協調多 agent：
 specifier 寫 Gherkin 與人工 QA 程序、coder 寫碼、cleaner 重構、
 architect 管相依、hardener 跑 mutation test、QA 執行驗收程序。
 
-紀律來自四件事：角色分離、Gherkin 可執行、mutation testing、活的 constitution。
+原本的問法是「要不要跟著做多 agent」。**那是錯的問題。**
+
+cc-sdd 的 `kiro-impl` autonomous 模式本身就是多 agent 編排：每個 task
+派 fresh implementer subagent、獨立 reviewer subagent（自跑 git diff，
+不信 implementer 回報），失敗兩輪再派 fresh debugger subagent。
+agent 數量不是本 repo 的決策軸，是 cc-sdd 的實作細節。
 
 ## 決策
 
-採用其紀律來源，但以單 agent 實作。不引入 tmux / worktree 協調。
+取 SwarmForge 的**驗收紀律**，不取其**協調架構**。
+
+具體是三件事：
+
+1. **Gherkin 是可執行的驗收**——scenario 由人核准，實作者不能挑測試
+2. **mutation testing**——測試強度要被量化，不能靠「測試都過了」自稱
+3. **人工 QA 不可省**——機器全綠不代表東西能用
+
+不自建 tmux / worktree / 角色分派。
 
 ## 理由
 
-單 agent 的致命弱點是「自己宣稱通過」。但本流程選用的兩道閘門
-——mutation score 與 Gherkin 綠燈——**都是機器裁決，不需要第二個 agent**。
+SwarmForge 的角色分離，目的是讓「寫的人」和「驗的人」不是同一個。
+這件事 cc-sdd 已經做了（`kiro-review` 明令不信任 implementer 的回報）。
+再疊一層自己的協調只會有兩套互相不知道對方存在的編排。
 
-把「獨立的 agent」換成「獨立的機器裁決」，紀律的來源沒有丟失。
-
-實務紅利：Windows 環境下省去整層 tmux/worktree 麻煩。
-SwarmForge 作者自己也指出，難的不是生出多個角色，
-而是讓它們有用地分歧而不把 repo 變成委員會產物。
+但 cc-sdd 的驗收軸是空的：它驗的是 implementer 自己寫的測試會不會過，
+不驗那些測試是否對應到你核准的驗收條件，也不驗那些測試夠不夠嚴。
+SwarmForge 的 specifier / hardener / QA 三個角色補的正是這一段——
+而這三件事**都不需要另一個 agent 來做**，只需要獨立的機器裁決加一次人工。
 
 ## 代價
 
-- 人工 QA 程序無法交給獨立 agent 執行，必須由人跑。**這一步不能省。**
-- 沒有 architect 角色持續看管模組相依，需靠 steering 的 constitution 約束。
+- 人工 QA 程序必須由人跑。**這一步不能省。**
+  cc-sdd 的 `MANUAL_VERIFY_REQUIRED` 只是「機器測不了」的逃生口，不是驗收程序
+- 沒有 architect 角色持續看管模組相依。
+  部分由 cc-sdd 的 `kiro-validate-impl` G.5 Boundary Audit 覆蓋，
+  但它管的是 spec 宣告的 boundary，不管 Clean Code 層級的相依方向
 
 ## 何時重新評估
 
-若單 agent 的自我驗證被證實不可信（例如 manual-qa 反覆抓到機器全綠但功能不可用），
-再考慮上 SwarmForge 的 four-pack。
+若 manual-qa 反覆抓到「機器全綠但功能不可用」，代表 cc-sdd 的 reviewer
+不夠嚴。那時該做的是**加嚴閘門**，不是再加 agent。

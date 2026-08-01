@@ -29,5 +29,9 @@ Spec Kit 的**閘門設計**仍值得參考，見 ADR-0002、ADR-0003。
 
 ## 代價
 
-- cc-sdd 的品質閘門比 Spec Kit 弱，需自行補齊（本 repo 的存在理由）
+- ~~cc-sdd 的品質閘門比 Spec Kit 弱，需自行補齊（本 repo 的存在理由）~~
+  **對 3.0.2 已不成立**——它的實作閘門反而比 Spec Kit 強。本 repo 的存在理由
+  改為：cc-sdd 強在單元測試軸，驗收軸與測試強度軸仍是空的。
+  見 [ADR-0005](0005-cc-sdd-overlap-audit.md)
 - 單一維護者專案，bus factor 較低
+- 上游演進快，重疊面會持續變動。每次升級 cc-sdd 都該重跑一次重疊稽核

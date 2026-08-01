@@ -1,6 +1,17 @@
 # ADR-0003: 將 Spec Kit 的 analyze 併入 trace，不單獨抄
 
-狀態：已決定
+狀態：已決定，**兩項結論經 ADR-0005 修訂**
+
+> ⚠️ 本 ADR 的兩個結論都被 cc-sdd 3.0.2 的實況推翻：
+>
+> - **`checklist` — 抄** → 不抄。`kiro-spec-requirements` 內建的
+>   `requirements-review-gate` 已完整涵蓋，且在寫檔前阻擋。`ears-checklist` 已刪除。
+> - **`analyze` 併入 trace 變四方對應** → 不併。跨產出一致性分析
+>   （需求 ↔ 設計 ↔ task）由 `kiro-validate-impl` 負責，trace 只保留
+>   cc-sdd 沒有的 EARS ↔ scenario 那一軸。
+>
+> **「不要兩個功能重疊的檢查器」這條原則沒有變，變的是誰該退讓。**
+> 當時假設 cc-sdd 那邊是空的，實際不是。
 
 ## 脈絡
 

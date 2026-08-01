@@ -1,4 +1,6 @@
-# Gherkin 準則
+# Gherkin Guidelines
+
+[Purpose: scenario 的寫法與 ID 慣例——trace-* 依賴此格式解析追溯關係]
 
 <!-- TODO: 貼上 AutomationPanda/gherkin-guidelines-for-ai 的 gherkin-guidelines.md
      來源：github.com/AutomationPanda/gherkin-guidelines-for-ai
