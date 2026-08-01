@@ -78,6 +78,7 @@ cp steering-custom/*.md /path/to/project/.kiro/steering/
 ## 文件
 
 - [docs/workflow.md](docs/workflow.md) — 一個 feature 從頭到尾的完整路徑
+- [docs/example-walkthrough.md](docs/example-walkthrough.md) — 同一條需求走完五道閘門的實例
 - [docs/decisions/](docs/decisions/) — 設計取捨的紀錄
 
 ## 狀態
