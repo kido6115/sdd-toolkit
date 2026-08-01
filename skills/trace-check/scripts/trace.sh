@@ -85,10 +85,23 @@ extract_req_refs() {
     | sed 's/^@REQ-//' | sort -u -V
 }
 
+extract_bc_ids() {
+  # grill-notes.md 的邊界條件編號，格式 "- [BC-01] 描述"
+  grep -oE '^\s*-\s*\[BC-[0-9]+\]' "$SPEC_PATH/grill-notes.md" 2>/dev/null \
+    | grep -oE 'BC-[0-9]+' | sort -u -V
+}
+
+extract_bc_refs() {
+  # scenario tag 上引用的邊界條件編號
+  grep -rhoE '@BC-[0-9]+' "$FEATURE_GLOB" 2>/dev/null | tr -d '@' | sort -u -V
+}
+
 case "$MODE" in
   check)
     echo "TODO: 雙向差集 —— extract_req_ids vs extract_req_refs，輸出缺口 JSON"
     echo "TODO: 孤兒偵測 —— 每個 @SCN 所在 scenario 是否至少帶一個 @REQ"
+    echo "TODO: BC 覆蓋 —— extract_bc_ids 每一條是否出現在 extract_bc_refs"
+    echo "TODO: grill-notes.md 不存在時 exit 2，不得當作通過"
     echo "TODO: 報告需一併輸出 scenario 標題，ID 本身不可讀"
     [ "$INCLUDE_DESIGN" -eq 1 ] && echo "TODO: 一併檢查 design.md 是否涵蓋所有 scenario"
     ;;

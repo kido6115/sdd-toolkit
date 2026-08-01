@@ -19,6 +19,7 @@
 |---|---|---|
 | REQ → scenario | 100%（無例外） | `trace-check` |
 | scenario → REQ | 100%（不允許孤兒 scenario） | `trace-check` |
+| BC → scenario | 100%（grill-notes 的每條邊界都要有著落） | `trace-check` |
 | scenario → task 綁定完整 | 100% | `trace-verify` |
 | scenario 未被竄改 | 100% | `trace-verify` |
 

@@ -32,6 +32,14 @@
 3.2 If 匯出過程中 session 過期，the 匯出服務 shall 中止並保留已完成的頁
 ```
 
+`grill-notes.md`：
+
+```md
+## 邊界條件與失敗路徑
+- [BC-01] 匯出筆數剛好等於單頁上限
+- [BC-04] 目標儲存空間不足
+```
+
 `features/export.feature`：
 
 ```gherkin
@@ -41,13 +49,22 @@ Scenario: 匯出超過一萬筆時分頁處理
   When 使用者匯出訂單
   Then 匯出完成
   And 產生 3 個檔案，前兩個各 10000 筆
+
+@SCN-043 @REQ-3.1 @BC-01
+Scenario: 匯出剛好一萬筆時不分頁
+  Given 帳戶有 10000 筆訂單
+  When 使用者匯出訂單
+  Then 匯出完成
+  And 產生 1 個檔案
 ```
 
-兩種 tag 的來歷不同：
+三種 tag 的來歷不同：
 
 - `@REQ-3.1` —— **直接引用** cc-sdd `requirements.md` 的編號，不另設別名
 - `@SCN-042` —— 流水號，不含語意。與 REQ 的序號無關（`SCN-042 → REQ-3.1`、
   `SCN-043 → REQ-7.2` 都正常），比對是集合運算，順序不參與
+- `@BC-01` —— grill-me 挖出的邊界條件，每個 feature 從 01 重新編號。
+  沒有這層，盤問結果只是散文，跳過整個 Phase 1 不會有閘門發現
 
 `.feature` 的 tag 是整條追溯鏈的支點。格式錯了，五道閘門有三道失效。
 慣例見 `.kiro/steering/gherkin-guidelines.md`。
@@ -65,6 +82,8 @@ REQ-3.2「若 session 過期，中止並保留已完成的頁」
   → 無對應 scenario                    ❌
 SCN-051「匯出時網路中斷」
   → 無對應 REQ（孤兒）                  ❌
+BC-04「目標儲存空間不足」
+  → 無 scenario 覆蓋                    ❌
 覆蓋率 8/10
 exit 1
 ```

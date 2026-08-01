@@ -19,7 +19,8 @@ agent 數量是 cc-sdd 的實作細節，不是這裡的決策軸。見 [ADR-000
 | 層 | 來源 | 說明 |
 |---|---|---|
 | 主體流程 | cc-sdd (17 skills) | steering / discovery / spec / impl / review / validate |
-| 意圖對齊 | grill-me (mattpocock) | 在 requirements 之前反覆盤問，產出 grill-notes.md |
+| 意圖對齊 | grill-me (mattpocock) | 需求探討與情節探討各盤問一次 |
+| **盤問落檔** | grill-capture | 本 repo。配發 `[BC-nn]`，讓盤問結果進入驗證鏈 |
 | Gherkin 品質 | gherkin-guidelines-for-ai | 掛進 steering |
 | **驗收成品** | scenario-write | 本 repo |
 | **追溯** | trace-check / trace-bind / trace-verify | 本 repo |
@@ -53,6 +54,7 @@ scenario 用不含語意的流水號。見 [ADR-0007](docs/decisions/0007-scenar
 | task 獨立審查 | cc-sdd `kiro-review` |
 | 不實完成宣稱 | cc-sdd `kiro-verify-completion` |
 | 需求涵蓋、設計漂移、跨 task 整合 | cc-sdd `kiro-validate-impl` |
+| **盤問結果結構化** | 本 repo `grill-capture` |
 | **產出 Gherkin scenario** | 本 repo `scenario-write` |
 | **需求 ↔ scenario 雙向對應** | 本 repo `trace-check` |
 | **task 的 DoD 綁定 scenario** | 本 repo `trace-bind` |
@@ -94,13 +96,14 @@ cp steering-custom/*.md /path/to/project/.kiro/steering/
 |---|---|
 | `scenario-write/scripts/scn-alloc.sh` | ✅ 可用 |
 | `scenario-write/SKILL.md` | ✅ 可用 |
+| `grill-capture/SKILL.md` | ✅ 可用 |
 | `trace-check/scripts/trace.sh` | ⛔ 三個 mode 全是 stub，一律 `exit 2` |
 | 其餘 SKILL.md | 內容完整，但依賴上面那支腳本 |
 | `mutation-gate/scripts/mutate.sh` | ⛔ 檔案不存在，技術棧未定 |
 
 建議實作順序（不要一次全開）：
 
-1. `scenario-write` — 跑 2–3 個 feature，確認 agent 真的把 scenario 當測試寫
+1. `grill-capture` + `scenario-write` — 跑 2–3 個 feature，確認 agent 真的把 scenario 當測試寫
 2. `trace-check` — 有了 `.feature` 才驗得起來
 3. `trace-bind` — 這是讓 `kiro-impl` 的紅燈對象變成你核准的 scenario 的關鍵
 4. `mutation-gate` — 門檻從 60% 開始往上調

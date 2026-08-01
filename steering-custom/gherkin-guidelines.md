@@ -305,6 +305,23 @@ cc-sdd 在四個地方強制數字 ID：`requirements-review-gate`（退回非�
 **ID 的作用是讓身分在內容改變時存活。** 一旦 ID 帶語意，語意變它就得變，
 這個作用就沒了。
 
+### `@BC-nn` —— grill-me 挖出來的邊界條件
+
+若這條 scenario 覆蓋了 `grill-notes.md` 裡的某條邊界條件或失敗路徑，
+必須加上對應的 `@BC-nn`：
+
+```gherkin
+@SCN-043 @REQ-3.1 @BC-01
+Scenario: 匯出剛好一萬筆時不分頁
+```
+
+`trace-check` 驗每條 BC 都有 scenario 覆蓋。沒有這層，grill-me 挖出來的
+邊界條件就只是散文，跳過整個盤問階段不會有任何閘門發現。
+
+BC 編號**每個 feature 從 01 重新開始**，與全域遞增的 `@SCN-NNN` 不同——
+BC 只在自己 feature 的 scenario 裡被引用，不會出現在 `tasks.md`、
+`qa-results.md` 或跨 feature 的地方，不需要全域唯一。
+
 ### 一對多與多對一
 
 一條需求通常對多條 scenario（正常路徑、邊界、失敗路徑）：
@@ -382,4 +399,5 @@ godog           Options.Paths
 - [ ] 每個 scenario 都有 `@SCN-NNN` 且未與既有號碼重複
 - [ ] 每個 scenario 至少帶一個 `@REQ-N.M`
 - [ ] `@REQ-N.M` 在 `requirements.md` 中確實存在
+- [ ] `grill-notes.md` 的每條 `[BC-nn]` 都有 scenario 以 `@BC-nn` 覆蓋
 - [ ] 每個 step 都有對應的 step definition（沒有的話這條 scenario 等同不存在）

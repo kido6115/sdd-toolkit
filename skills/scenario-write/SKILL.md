@@ -10,8 +10,12 @@ cc-sdd 沒有 Gherkin——它的追溯單位是 `requirements.md` 的章節編�
 ## 輸入
 
 - `.kiro/specs/<feature>/requirements.md` —— 驗收條件（`N.M`）
-- `.kiro/specs/<feature>/grill-notes.md` —— 邊界條件、失敗路徑、
-  **被否決的替代方案**。這些是最容易在實作中被簡化掉的東西，優先轉成 scenario
+- `.kiro/specs/<feature>/grill-notes.md` —— `[BC-nn]` 邊界條件與失敗路徑，
+  以及被否決的替代方案
+
+**`grill-notes.md` 不存在就停下來**，請使用者先跑 `/grill-me` 與
+`/grill-capture`。不要在沒有 BC 清單的情況下硬產 scenario——
+那等於把整條流程最容易被簡化掉的部分直接跳過。
 
 ## 輸出
 
@@ -51,14 +55,30 @@ scenario 刪掉之後號碼不會被回收，因為 git 歷史、`qa-results.md`
    不要在報告裡宣稱「已涵蓋所有需求」。
 
 4. 一條驗收條件通常需要多條 scenario：正常路徑、邊界、失敗路徑。
-   只寫正常路徑是最常見的偷懶——`grill-notes.md` 裡那些邊界就是拿來補這個的。
+   只寫正常路徑是最常見的偷懶。
+
+5. **每條 `[BC-nn]` 都必須有 scenario 覆蓋，並以 `@BC-nn` 標註。**
+   一條 scenario 可同時覆蓋多條 BC，一條 BC 也可由多條 scenario 覆蓋。
+   涵蓋不到的 BC 逐條回報——通常代表需求漏寫了它，該退回 requirements，
+   而不是在這裡放掉。
+
+## 情節探討
+
+草稿完成後、跑 `/trace-check` 之前，對著 scenario 再跑一次 `/grill-me`。
+
+第一次盤問（Phase 1）問的是「你想做什麼」，這一次問的是
+**「這些情節漏了什麼」**——同樣的手法，對象換成具體的 Given/When/Then。
+
+盤問中冒出的新邊界，回頭補進 `grill-notes.md` 的 BC 清單（走
+`/grill-capture`，只追加不重編），再回來補 scenario。
 
 ## 收尾
 
 呈現：
 
-- 本次新增的 scenario 清單（`@SCN` / `@REQ` / 標題）
+- 本次新增的 scenario 清單（`@SCN` / `@REQ` / `@BC` / 標題）
 - 沒有掛上任何 scenario 的驗收條件，逐條列出並說明原因
+- **沒有被任何 scenario 覆蓋的 BC**，逐條列出
 - 判定為無法測的驗收條件，逐條列出
 
 然後告訴使用者跑 `/trace-check`。

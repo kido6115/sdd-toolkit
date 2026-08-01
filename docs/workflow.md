@@ -49,19 +49,28 @@ sync 會偵測 code drift 並 additive 更新（既有的使用者修改不會�
 ## Phase 1 — 意圖對齊
 
 ```
+npx <grill-me-package>       # TODO: 補上實際指令
 /kiro-discovery "<一句話描述>"
-/grill-me
+/grill-me                    # 需求探討
+/grill-capture               # 落檔成結構化的 grill-notes.md
 ```
 
 grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑、權限邊界、規模上限。
 
-**結束後必須落檔**（預設它只是對話，context 一清就沒了）：
+`/grill-capture` 把對話落檔（預設它只是對話，context 一清就沒了），
+並為每條邊界條件與失敗路徑配發 `[BC-nn]` 編號：
 
-```
-.kiro/specs/<feature>/grill-notes.md
+```md
+## 邊界條件與失敗路徑
+- [BC-01] 匯出筆數剛好等於單頁上限
+- [BC-02] 匯出過程中 session 過期
 ```
 
-記錄：做的決策、**被否決的替代方案與否決理由**。第二項比第一項重要。
+**BC 編號是 grill-me 進入驗證鏈的關鍵。** 沒有它，盤問結果只是散文——
+跳過整個 Phase 1 不會有任何閘門發現。有了之後，`trace-check` 會驗
+每條 BC 都有 scenario 覆蓋（`@BC-nn`）。
+
+同時記錄：做的決策、**被否決的替代方案與否決理由**。第二項比第一項重要。
 
 > ⚠️ 這個階段不要 `/clear`。grill-me 會回頭引用你先前的詮釋。
 
@@ -78,7 +87,13 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 
 ```
 /scenario-write             # 讀 requirements.md + grill-notes.md 產出 .feature
+/grill-me                   # 情節探討：對著草稿再盤問一次
+/grill-capture              # 新冒出的邊界追加成 BC，回頭補 scenario
 ```
+
+**grill-me 用兩次。** Phase 1 問「你想做什麼」，這裡問
+**「這些情節漏了什麼」**——同樣的手法，對象換成具體的 Given/When/Then。
+第二次通常比第一次便宜（你已經想清楚了），但抓到的東西更具體。
 
 **這一步不能省，也沒有別人會做。** cc-sdd 完全沒有 Gherkin——
 `.feature` 檔不會憑空出現，`trace-*` 三個 skill 都建立在它之上。
@@ -111,6 +126,8 @@ REQ-3.1「當匯出超過 10000 筆時，系統應分頁處理」
   → 無對應 scenario          ❌
 SCN-051「匯出時 session 過期」
   → 無對應 REQ（孤兒）       ❌
+BC-04「目標儲存空間不足」
+  → 無 scenario 覆蓋         ❌
 覆蓋率 8/10
 ```
 
@@ -230,12 +247,16 @@ mutation test 的時間與 token。
 
 ## 人的決策點
 
-整條流程你只需要出現四次：
+整條流程你只需要出現五次：
 
-1. 回答 grill-me（20–40 分鐘）
-2. 核准 requirements（含看 trace-check 報告）
-3. 核准 design
-4. 執行 manual-qa
+1. 回答 grill-me — 需求探討（20–40 分鐘）
+2. 回答 grill-me — 情節探討（較短，你已經想清楚了）
+3. 核准 requirements（含看 trace-check 報告）
+4. 核准 design
+5. 執行 manual-qa
+
+第 4 條之外還有一個非固定的介入點：`trace-verify` 若報告 `.feature`
+在實作階段被改過，要逐條確認那是合理演進還是放水。
 
 ---
 
