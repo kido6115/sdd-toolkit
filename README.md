@@ -97,14 +97,14 @@ cp steering-custom/*.md /path/to/project/.kiro/steering/
 | `scenario-write/scripts/scn-alloc.sh` | ✅ 可用 |
 | `scenario-write/SKILL.md` | ✅ 可用 |
 | `grill-capture/SKILL.md` | ✅ 可用 |
-| `trace-check/scripts/trace.sh` | ⛔ 三個 mode 全是 stub，一律 `exit 2` |
+| `trace-check/scripts/trace.sh` — `check` | ✅ 可用（六種缺口偵測，`--include-design` 走 REQ） |
+| `trace-check/scripts/trace.sh` — `bind` / `verify` | ⛔ stub，`exit 2` |
 | 其餘 SKILL.md | 內容完整，但依賴上面那支腳本 |
 | `mutation-gate/scripts/mutate.sh` | ⛔ 檔案不存在，技術棧未定 |
 
 建議實作順序（不要一次全開）：
 
 1. `grill-capture` + `scenario-write` — 跑 2–3 個 feature，確認 agent 真的把 scenario 當測試寫
-2. `trace-check` — 有了 `.feature` 才驗得起來
-3. `trace-bind` — 這是讓 `kiro-impl` 的紅燈對象變成你核准的 scenario 的關鍵
-4. `mutation-gate` — 門檻從 60% 開始往上調
-5. `trace-verify` + `manual-qa`
+2. `trace-bind` — 這是讓 `kiro-impl` 的紅燈對象變成你核准的 scenario 的關鍵
+3. `mutation-gate` — 門檻從 60% 開始往上調
+4. `trace-verify` + `manual-qa`

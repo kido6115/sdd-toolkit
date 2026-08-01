@@ -274,6 +274,30 @@ Scenario: 匯出超過一萬筆時分頁處理
 
 `trace-*` 依賴這個格式解析對應關係。格式錯了追溯就斷了。
 
+### tag 必須單行且緊鄰 Scenario
+
+一條 scenario 的所有 tag 寫在**同一行**，且直接放在 `Scenario:` 上方：
+
+```gherkin
+@SCN-042 @REQ-3.1 @BC-01
+Scenario: 匯出超過一萬筆時分頁處理
+```
+
+不要拆成多行：
+
+```gherkin
+@SCN-042
+@REQ-3.1        ← 不要這樣
+Scenario: ...
+```
+
+Gherkin 本身允許多行 tag，這是**本專案的追加限制**。理由是
+`trace.sh` 的解析器靠「tag 行的下一個 `Scenario:`」歸屬，
+單行約束讓它保持在 awk 十行以內，不需要維護一個 Gherkin parser。
+
+Feature 層的 tag（寫在 `Feature:` 上方）會被繼承給該檔所有 scenario，
+這符合 Gherkin 語意，解析器有處理。
+
 ### `@REQ-N.M` —— 直接用 cc-sdd 的編號
 
 `N.M` 是 `requirements.md` 的驗收條件編號，**不要另外發明別名**。
