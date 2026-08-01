@@ -76,9 +76,16 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 /kiro-spec-requirements     # 讀 grill-notes.md
 ```
 
+```
+/scenario-write             # 讀 requirements.md + grill-notes.md 產出 .feature
+```
+
+**這一步不能省，也沒有別人會做。** cc-sdd 完全沒有 Gherkin——
+`.feature` 檔不會憑空出現，`trace-*` 三個 skill 都建立在它之上。
+
 產出：
-- `requirements.md` — EARS 格式
-- `features/*.feature` — Gherkin，**住在 spec 樹裡**
+- `requirements.md` — EARS 格式（cc-sdd 產出）
+- `features/*.feature` — Gherkin，**住在 spec 樹裡**（`scenario-write` 產出）
 
 `.feature` 放 `.kiro/specs/<feature>/features/`，step definition 放專案測試目錄。
 理由不是整齊——契約落在所有 task `_Boundary:_` 之外，implementer 動它就是
