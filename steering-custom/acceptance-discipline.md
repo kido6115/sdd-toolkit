@@ -29,18 +29,24 @@ cc-sdd 已負責的，本檔不重述：
 2. Gherkin 是可執行的測試，不是文件。`.feature` 檔若沒有對應的
    step definition，等同不存在。
 
-3. `kiro-impl` 的紅燈對象**必須包含**該 task 綁定的 scenario。
+3. **`.feature` 在實作期唯讀。** 它住在 `.kiro/specs/<feature>/features/`，
+   落在所有 task 的 `_Boundary:_` 之外——implementer 修改它即為
+   boundary violation。step definition 是實作產物，放專案測試目錄，正常撰寫。
+
+   要改 scenario，退回 requirements 走正式流程，不要在實作中就地改。
+
+4. `kiro-impl` 的紅燈對象**必須包含**該 task 綁定的 scenario。
    cc-sdd 預設讓 implementer 自選測試——那是它自己寫的、自己知道能過的測試。
    綁定的 scenario 是你核准的，實作者不能挑。
 
-4. task 的完成定義是「綁定的 scenario 由紅轉綠」。
+5. task 的完成定義是「綁定的 scenario 由紅轉綠」。
    `kiro-review` 的 APPROVED 是必要條件，不是充分條件。
 
-5. mutation score 只計算本次 diff scope，不計全域。
+6. mutation score 只計算本次 diff scope，不計全域。
    存活的 mutant 必須逐一說明：測試不夠嚴，還是該 mutant 等價。
    門檻見 `quality-gates.md`，未達門檻不得進入 manual-qa。
 
-6. `trace-*` 與 `mutation-gate` 的 exit code 不可被詮釋。
+7. `trace-*` 與 `mutation-gate` 的 exit code 不可被詮釋。
    agent 負責轉述，不得自行判讀通過與否，不得為未通過的結果找理由。
 
 ## Code Quality

@@ -29,4 +29,9 @@ description: 實作完成後驗證 Gherkin scenario 是否在過程中被竄改�
 歸因靠 `@SCN-NNN`——標題改了、步驟改了，tag 不變，diff 仍可歸到同一條。
 若身分是標題，改標題就等於「舊的消失、新的出現」，竄改會被誤判為重構。
 
+`.feature` 住在 `.kiro/specs/<feature>/features/`，落在所有 task 的
+`_Boundary:_` 之外。所以本 skill 不是唯一的防線——`kiro-review` 與
+`kiro-validate-impl` 的 Boundary Audit 也會把這種修改判為 violation。
+若它們已經報過，本 skill 的作用是把 violation 翻譯成「哪條驗收條件被放寬了」。
+
 不要自行判讀通過與否。

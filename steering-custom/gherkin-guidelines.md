@@ -74,16 +74,40 @@ cc-sdd 在四個地方強制數字 ID：`requirements-review-gate`（退回非�
 
 ### 檔案位置
 
-<!-- TODO: 二選一，決定後刪掉另一個
+**契約與實作分開放。**
 
-  A. .kiro/specs/<feature>/features/*.feature
-     優點：規格與測試同處，trace 掃描路徑單純
-     缺點：與既有測試目錄分離，CI 設定要多指一個路徑
+```
+.kiro/specs/<feature>/features/*.feature   ← 驗收契約
+tests/steps/…（依框架慣例）                 ← step definition
+```
 
-  B. 專案既有測試目錄（tests/features/ 等）
-     優點：測試工具零設定，CI 天然涵蓋
-     缺點：trace 需跨目錄比對，且 feature 與規格分離
--->
+| | `.feature` | step definition |
+|---|---|---|
+| 性質 | 你核准的驗收條件 | 實作產物 |
+| 實作期 | **唯讀** | 正常撰寫 |
+| 位置 | spec 樹 | 專案測試目錄 |
+
+`.feature` 放在 spec 樹的理由不是整齊，是**它會落在所有 task 的
+`_Boundary:_` 之外**。implementer 去動它本身就是 boundary violation，
+`kiro-review` 與 `kiro-validate-impl` 的 G.5 Boundary Audit 會抓。
+等於 cc-sdd 免費幫 `trace-verify` 站了第二道崗。
+
+step definition 是實作，本來就該由 implementer 寫，放專案測試目錄照常演進。
+
+### 測試框架設定
+
+features 與 step def 分家需要一行設定：
+
+```
+cucumber-js     paths 指 .kiro/specs/*/features/，--import 指 step def
+pytest-bdd      scenarios("<repo根>/.kiro/specs/<feature>/features/x.feature")
+Cucumber-JVM    @CucumberOptions(features = "...", glue = "...")
+godog           Options.Paths
+```
+
+> ⚠️ behave 要求 `steps/` 貼著 features 目錄，Reqnroll / SpecFlow 要求
+> `.feature` 是專案項目並跑 code-behind 產生器。這兩者用本慣例要繞。
+> 已知取捨，見 [ADR-0008](../docs/decisions/0008-feature-file-location.md)。
 
 ### 宣告式而非命令式
 

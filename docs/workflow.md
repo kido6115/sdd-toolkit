@@ -78,7 +78,12 @@ grill-me 逐題盤問，你逐題回答。會挖出邊界條件、失敗路徑�
 
 產出：
 - `requirements.md` — EARS 格式
-- `features/*.feature` — Gherkin
+- `features/*.feature` — Gherkin，**住在 spec 樹裡**
+
+`.feature` 放 `.kiro/specs/<feature>/features/`，step definition 放專案測試目錄。
+理由不是整齊——契約落在所有 task `_Boundary:_` 之外，implementer 動它就是
+boundary violation，cc-sdd 的 `kiro-review` 會抓。
+見 [ADR-0008](decisions/0008-feature-file-location.md)。
 
 ```
 /trace-check                # 驗需求 ↔ scenario 雙向對應
@@ -168,7 +173,11 @@ acceptance-first 由 cc-sdd 的 **Feature Flag Protocol** 強制：加旗標（�
 本 toolkit 在這一段的增量只剩一件事，但它是關鍵的一件：
 **cc-sdd 的紅燈是 implementer 自己寫的測試**——它自己挑的、自己知道能過的。
 `trace-bind` 把 DoD 換成「指定 scenario 由紅轉綠」，
-差別在紅燈的定義權在誰手上。見 `acceptance-discipline.md` 第 3 條。
+差別在紅燈的定義權在誰手上。見 `acceptance-discipline.md` 第 4 條。
+
+這一段 implementer 該寫的是 **step definition**（在專案測試目錄），
+不是 `.feature`。後者唯讀，而且落在 boundary 之外——它去改就會被
+`kiro-review` 判為 violation。
 
 **這一段可以整包放手**，因為完成判定是機器的。
 

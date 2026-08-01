@@ -52,14 +52,13 @@ SPEC_PATH="$SPECS_DIR/$FEATURE"
 # 兩者無序號關聯。SCN-042 → REQ-2.1、SCN-043 → REQ-7.3 皆屬正常，
 # 比對為集合運算，順序不參與。
 #
-# TODO: .feature 檔位置未定 —— 見 gherkin-guidelines.md 的 TODO
-#   A. $SPEC_PATH/features/*.feature
-#   B. 專案既有測試目錄
-#   下方 FEATURE_GLOB 依此調整。
+# .feature 位置（已定案，見 ADR-0008）
+#   契約 $SPEC_PATH/features/*.feature —— 落在所有 task boundary 之外
+#   step definition 放專案測試目錄，不在本腳本的掃描範圍
 # ---------------------------------------------------------------
 
 REQ_ID_PATTERN='[0-9]+\.[0-9]+'
-FEATURE_GLOB="$SPEC_PATH/features"   # TODO: 確認位置後調整
+FEATURE_GLOB="$SPEC_PATH/features"
 
 extract_req_ids() {
   # cc-sdd 的驗收條件編號為 N.M，出現在標題或條列項的行首。
