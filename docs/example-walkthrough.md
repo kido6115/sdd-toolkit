@@ -2,7 +2,7 @@
 
 用同一條需求貫穿全程，看每道閘門實際攔到什麼。
 
-功能：**訂單匯出**。假設所有 skill 都已實作。
+功能：**訂單匯出**。
 
 ---
 
@@ -17,7 +17,9 @@
 | 不通過 | 通常繼續 | 停，退回指定階段 |
 
 `exit 0` 通過、`1` 有缺口、`2` 執行錯誤。**`2` 也是不通過**——
-腳本壞掉不等於檢查通過，這是 `trace.sh` 現在的 stub 一律 `exit 2` 的原因。
+腳本壞掉、設定缺失、掃出空集合，都不等於檢查通過。
+例如 `trace.sh` 在 `requirements.md` 抓不到任何 `N.M` 編號時回 `2` 並說明
+pattern 可能不符排版，而不是回報「覆蓋率 0/0 通過」。
 
 ---
 
@@ -159,30 +161,64 @@ kiro-review  VERDICT: REJECTED
 那句話說的是「你不該碰那個檔案」。`trace-verify` 補的是另一句——
 **「你把哪條驗收條件放寬了」**。前者是權限問題，後者是語意問題。
 
+基準線是 `trace-bind` 產生的 `scenarios.lock`：
+
 ```
-⚠️ SCN-042 在實作階段被修改
+SCN-042	a79e2e428afd	REQ-3.1	-	export.feature	分頁匯出
+```
 
-  commit a3f21e9  "fix: 調整匯出測試"
+實作時 agent 把 `Then 產生 3 個檔案，前兩個各 10000 筆` 拿掉，重算雜湊就對不上：
 
-  - Then 匯出完成
-  - And 產生 3 個檔案，前兩個各 10000 筆
-  + Then 匯出完成
-
-exit 1，需人工確認
+```json
+{
+  "baseline": ".kiro/specs/export/scenarios.lock",
+  "findings": {
+    "scenario_modified": ["SCN-042「分頁匯出」內容變更"],
+    "scenario_removed": [],
+    "scenario_added_after_bind": [],
+    "tag_changed": [],
+    "binding_broken": [],
+    "undefined_steps": []
+  },
+  "verdict": "FAIL"
+}
 ```
 
 前面對得好好的：REQ 有 scenario、scenario 有設計、task 有綁定。
-實作時測試過不了，agent 把斷言拿掉——**現在測試綠了，追溯鏈完整，
-覆蓋率 100%**。
+斷言拿掉之後——**測試綠了，追溯鏈完整，覆蓋率 100%**，前面每一道都會放行。
 
-只有比對 git diff 才抓得到——`kiro-review` 只知道「檔案被動了」，
-不知道動的方向是收緊還是放寬。
+**不用 git diff 是刻意的。** git 需要一個「bind 是哪個 commit」的基準線，
+rebase 或 squash 之後就失準。雜湊不受歷史重寫影響。
+雜湊前會逐行去空白、丟空行，所以重排版不誤報，內容變動才報。
 
-你要判斷：這是合理的需求演進（那就回頭改 requirements），
-還是為了讓測試過關而放水（那就退回實作）。
+### 改標題規避不了
 
-其他三種：tag 被移除、綁定失效、scenario 沒有對應的 step definition
-（有 `.feature` 但沒人實作那些步驟，等同不存在）。
+若 agent 順手把標題也改掉：
+
+```json
+"scenario_modified": ["SCN-042 內容與標題皆變更：「分頁匯出」→「匯出大量訂單」"]
+```
+
+若 scenario 的身分是標題，這在機器眼裡會是「一條消失、一條出現」，
+看起來像重構。`@SCN-042` 讓身分在內容改變後存活——這就是
+[ADR-0007](decisions/0007-scenario-id-convention.md) 堅持給 scenario
+一個不含語意 ID 的理由。
+
+你要判斷：這是合理的需求演進（回頭改 requirements，重跑 `/trace-bind` 更新 lock），
+還是為了讓測試過關而放水（退回實作）。
+
+### 另外四種發現
+
+| 欄位 | 意義 |
+|---|---|
+| `scenario_removed` | 整條不見了 |
+| `scenario_added_after_bind` | 偷加了沒經核准的 scenario |
+| `tag_changed` | `@REQ` / `@BC` 被增刪 |
+| `undefined_steps` | 有 scenario 但沒人實作步驟——等同不存在 |
+
+最後一項靠測試框架的 dry-run（指令在 `toolchain.md`），
+且**一律解析輸出不看 exit code**——pytest 的 `--generate-missing`
+在有缺步驟時回 `0`、全部實作完回 `3`，是反的。
 
 ---
 
@@ -192,18 +228,24 @@ exit 1，需人工確認
 
 只計本次 diff 涉及的檔案。
 
+```json
+{
+  "scope": "diff",
+  "counts": { "killed": 3, "survived": 4, "total": 7 },
+  "score": 42,
+  "threshold": 60,
+  "survivors": ["exporter.paginator.x_page_count__mutmut_1", "..."],
+  "verdict": "FAIL"
+}
 ```
-mutation score: 71%（門檻 60%）✅
 
-存活 mutant 4 個：
-  src/export/paginator.ts:34
-    - if (total > 10000)
-    + if (total >= 10000)
-    未被任何測試殺死
-```
+分數由腳本自己依模組前綴篩算，**不採用工具給的總分**——
+mutation 工具的報表通常是資料庫累積結果。實測同一個 repo
+全域 50%、diff scope 42%，全域分數容易靠灌水達標。
 
-分數過了，但這個 mutant 值得看：邊界值 `total === 10000` 沒有測試涵蓋。
-SCN-042 用 25000 筆，測不到邊界。
+存活的 mutant 裡若有 `total > size` → `total >= size` 這種，
+代表邊界值 `total == size` 沒有測試涵蓋。
+SCN-042 用 25000 筆，測不到邊界。SCN-043 才是那條邊界 scenario。
 
 每個存活的 mutant 要歸類：
 
@@ -253,7 +295,7 @@ mutation testing 是整條流程最貴的一步，把它放在最後一道機器
 |---|---|---|
 | 1 `trace-check` | exit code | requirements |
 | 2 `trace-check --include-design` | exit code | design |
-| 3 `trace-verify` | exit code + 人確認 diff | 實作 |
+| 3 `trace-verify` | exit code + 人確認變更 | 實作 |
 | 4 `mutation-gate` | 分數 vs `quality-gates.md` | 補測試 |
 | 5 `manual-qa` | **人** | 實作 |
 

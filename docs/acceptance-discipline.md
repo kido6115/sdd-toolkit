@@ -37,18 +37,22 @@ cc-sdd 的 `kiro-impl` 會做 RED → GREEN，但**紅燈的對象是 implemente
 
 ### 2. `.feature` 沒有 step definition 等同不存在
 
-**由誰保證：** `trace.sh verify`——**尚未實作**。
+**由誰保證：** `trace.sh verify` 的 `undefined_steps`。
 
-需要跑測試框架的 dry-run 找 undefined steps，而那綁技術棧。
+指令來自 `toolchain.md` 的 `FEATURE_DRYRUN_CMD`（Python 是
+`pytest --generate-missing --feature ...`），**一律解析輸出不看 exit code**
+——pytest 那個是反的：有缺步驟回 `0`、全部實作完回 `3`。
 
-**目前是裸露的。若失效：** `.feature` 退化成文件裝飾，
-整套追溯鏈驗的是一堆不會執行的文字。**這是最大的裸露面。**
+缺席不等於豁免：`toolchain.md` 未定義該鍵時 `exit 2`，
+要豁免必須明確設為 `-`。
+
+**若失效：** `.feature` 退化成文件裝飾，整套追溯鏈驗的是一堆不會執行的文字。
 
 ---
 
 ### 3. `.feature` 在實作期唯讀
 
-**由誰保證：結構，不是規則。**
+**由誰保證：結構 + 雜湊，兩層。**
 
 檔案住在 `.kiro/specs/<feature>/features/`，物理上落在所有 task 的
 `_Boundary:_` 之外。implementer 一動它，`kiro-review` 就判為
@@ -57,6 +61,9 @@ Boundary Violation，`kiro-validate-impl` 的 G.5 Boundary Audit 也會抓。
 這是 [ADR-0008](decisions/0008-feature-file-location.md) 刻意換來的：
 接受 behave / SpecFlow / cucumber-ruby 三個生態要多繞一步，
 換 cc-sdd 免費站一班崗。
+
+第二層是 `trace.sh verify` 比對 `scenarios.lock` 的內容雜湊。
+`kiro-review` 報「你不該碰那個檔案」，`verify` 報「你把哪條驗收條件放寬了」。
 
 step definition 是實作產物，放專案測試目錄，正常撰寫。
 
@@ -79,6 +86,7 @@ step definition 是實作產物，放專案測試目錄，正常撰寫。
 
 **目前只做到一半。** `_DoD:` 說了「點亮哪兩條」，沒說「怎麼單獨跑那兩條」。
 `kiro-impl` 推導出的是跑整套的指令，紅燈訊號會被既有的綠燈稀釋。
+`toolchain.md` 已有 `FEATURE_TEST_CMD`，缺的是把它寫進 `_DoD:` 行。
 
 **若失效：核心命題就沒了。** 這條是整套的樞紐。
 
@@ -95,10 +103,11 @@ step definition 是實作產物，放專案測試目錄，正常撰寫。
 
 ### 6. mutation score 只計本次 diff scope
 
-**由誰保證：** `mutation-gate/SKILL.md` 自己就寫了，門檻明確指名
-`.kiro/steering/quality-gates.md`（那份留在 steering，因為真的會被讀）。
+**由誰保證：** `mutate.sh`。分數由腳本自己依模組前綴篩算，
+**不採用工具給的總分**——mutation 工具的報表通常是資料庫累積結果。
+實測同一個 repo 全域 50%、diff scope 42%。
 
-**目前是裸露的：** `scripts/mutate.sh` **檔案不存在**，SKILL.md 卻呼叫它。
+門檻讀 `quality-gates.md`，執行指令讀 `toolchain.md`。
 
 全域分數容易靠灌水達標，diff scope 藏不住。存活的 mutant 必須逐一說明：
 測試不夠嚴，還是該 mutant 等價。
@@ -119,20 +128,28 @@ pattern 可能不符排版，而**不是**回報「覆蓋率 0/0 通過」。
 
 ---
 
-## 現在還裸露的三處
+## 現在還裸露的一處
 
-| 紀律 | 缺什麼 |
+| 紀律 | 狀態 |
 |---|---|
-| 2 | step definition 存在性檢查（需框架 dry-run） |
-| 4 | scenario 的單獨執行指令（需 tag filter） |
-| 6 | `mutate.sh` 根本不存在 |
+| 1 | ✅ `trace.sh check` |
+| 2 | ✅ `trace.sh verify` 的 `undefined_steps`（走 `toolchain.md` 的 dry-run） |
+| 3 | ✅ 結構 + `trace.sh verify` 的雜湊比對，兩層 |
+| 4 | ⚠️ **一半**——`_DoD:` 有寫下要點亮哪幾條，但沒帶「怎麼單獨跑那幾條」的指令 |
+| 5 | ⚠️ 同上 |
+| 6 | ✅ `mutate.sh`（diff scope 自算） |
+| 7 | ✅ 各 SKILL.md + 腳本的 exit 2 自檢 |
 
-三個共用同一個依賴：**技術棧未定**。
+剩下的那一半：`toolchain.md` 已定義 `FEATURE_TEST_CMD`（依 tag 跑指定
+scenario），但 `trace-bind` 目前沒有把實際指令寫進 `_DoD:` 行。
+implementer 拿到的是「SCN-042, SCN-043 由紅轉綠」，得自己想辦法跑。
+
+`kiro-impl` 的 preflight 推導出的是**跑整套**的指令，所以：
+
+- ✅ 實作後全套變綠 —— 成立
+- ⚠️ 實作前先跑那兩條確認是紅的 —— 精度不足，紅燈訊號被既有綠燈稀釋
+
 追蹤於 [#2](https://github.com/kido6115/sdd-toolkit/issues/2)。
-
-在那之前，這套的實際保護力是：需求 ↔ scenario 的追溯完整（1）、
-契約不被偷改（3）、DoD 有寫下來（4 的一半）。
-**測試強度與可執行性完全沒有保障。**
 
 ---
 

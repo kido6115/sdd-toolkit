@@ -30,7 +30,7 @@ cp -r skills/* .claude/skills/
 它由腳本與結構保證，不由條文保證，說明見
 [acceptance-discipline.md](acceptance-discipline.md)。
 
-**只有 `cp` 那兩行是每專案一次。`/kiro-steering` 不是。**
+**兩行 `cp` 與 Phase 1 的 `npx` 是每專案一次。`/kiro-steering` 不是。**
 
 它自己分兩個模式：目錄空的走 bootstrap，三份 core 都在就走 sync——
 sync 會偵測 code drift 並 additive 更新（既有的使用者修改不會被蓋掉）。
@@ -259,7 +259,7 @@ mutation test 的時間與 token。
 |---|---|---|
 | requirements 後 | check | 需求沒測到 / 測了沒需求 |
 | tasks 後 | bind | 建立綁定，定義 DoD |
-| impl 後 | verify | scenario 被竄改 / tag 遺失 / 綁定失效 |
+| impl 後 | verify | scenario 被竄改 / 刪除 / 偷加 / 缺步驟實作 |
 
 **只做第一次是最常見的偷懶**，那樣它就退化成一次性檢查。
 
@@ -278,8 +278,8 @@ mutation test 的時間與 token。
 4. 核准 design
 5. 執行 manual-qa
 
-第 4 條之外還有一個非固定的介入點：`trace-verify` 若報告 `.feature`
-在實作階段被改過，要逐條確認那是合理演進還是放水。
+這五次之外還有一個非固定的介入點：`trace-verify` 若報告 scenario
+在實作階段被改過或偷加，要逐條確認那是合理演進還是放水。
 
 ---
 

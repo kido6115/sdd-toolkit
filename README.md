@@ -100,18 +100,25 @@ steering 三份：`gherkin-guidelines.md`（`scenario-write` 指名）、
 
 ## 狀態
 
-🚧 骨架階段。
+五道閘門都有機器裁決，三支腳本都跑得起來。**尚未在真實專案跑過完整一輪。**
 
 | 元件 | 狀態 |
 |---|---|
-| `scenario-write/scripts/scn-alloc.sh` | ✅ 可用 |
-| `scenario-write/SKILL.md` | ✅ 可用 |
-| `grill-capture/SKILL.md` | ✅ 可用 |
-| `trace-check/scripts/trace.sh` — `check` | ✅ 可用（六種缺口偵測，`--include-design` 走 REQ） |
-| `trace-check/scripts/trace.sh` — `bind` | ✅ 可用（`--dry-run`、冪等） |
-| `trace-check/scripts/trace.sh` — `verify` | ✅ 可用（`scenarios.lock` 雜湊比對 + 步驟檢查） |
+| `scn-alloc.sh` | ✅ `@SCN` 永不重用，水位檔遺失可自我修復 |
+| `trace.sh check` | ✅ 六種缺口，`--include-design` 走 REQ 傳遞 |
+| `trace.sh bind` | ✅ `--dry-run`、冪等，同時產生 `scenarios.lock` |
+| `trace.sh verify` | ✅ lock 雜湊比對 + 步驟檢查，六種發現 |
+| `mutate.sh` | ✅ diff scope 自算（Python/mutmut 實測） |
+| 各 SKILL.md | ✅ |
 
-| `mutation-gate/scripts/mutate.sh` | ✅ 可用（diff scope 自算，Python/mutmut 實測） |
+### 已知未驗
+
+| 項目 | 說明 |
+|---|---|
+| `extract_req_ids` 的 regex | 未對照真實 `requirements.md`。抓到 0 筆時 `exit 2`，不會靜默出錯 |
+| Java / JS / Go 的 `toolchain.md` 設定 | 依框架文件寫出，未實測。特別要驗 dry-run 的 exit code |
+| `_DoD:` 的執行指令 | 綁定寫下了「點亮哪幾條」，但沒帶怎麼跑（[#2](https://github.com/kido6115/sdd-toolkit/issues/2)） |
+| 穩定期 mutation 門檻 | 導入期 60% 跑幾週後再調 |
 
 建議實作順序（不要一次全開）：
 

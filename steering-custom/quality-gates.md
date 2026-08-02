@@ -27,7 +27,8 @@
 | scenario → REQ | 100%（不允許孤兒 scenario） | `trace-check` |
 | BC → scenario | 100%（grill-notes 的每條邊界都要有著落） | `trace-check` |
 | scenario → task 綁定完整 | 100% | `trace-verify` |
-| scenario 未被竄改 | 100% | `trace-verify` |
+| scenario 未被竄改 / 刪除 / 偷加 | 100% | `trace-verify` |
+| 每個步驟都有 step definition | 100% | `trace-verify` |
 
 追溯沒有「大致上」，缺一條就是缺口。
 
