@@ -24,7 +24,7 @@ agent 數量是 cc-sdd 的實作細節，不是這裡的決策軸。見 [ADR-000
 | Gherkin 品質 | gherkin-guidelines-for-ai | 掛進 steering |
 | **驗收成品** | scenario-write | 本 repo |
 | **追溯** | trace-check / trace-bind / trace-verify | 本 repo |
-| **測試強度** | mutation-gate | 本 repo |
+| **測試強度** | mutation-gate | 本 repo。Python 用 mutmut，語言相依只在 `toolchain.md` |
 | **人工驗收** | manual-qa | 本 repo |
 
 粗體是這個 repo 真正原創的部分，其餘是接線。
@@ -74,8 +74,9 @@ cp -r skills/* /path/to/project/.claude/skills/
 cp steering-custom/*.md /path/to/project/.kiro/steering/
 ```
 
-steering 只有兩份：`gherkin-guidelines.md`（`scenario-write` 指名）與
-`quality-gates.md`（`mutation-gate` 指名）。驗收紀律本身不進 steering，
+steering 三份：`gherkin-guidelines.md`（`scenario-write` 指名）、
+`quality-gates.md` 與 `toolchain.md`（`mutation-gate` 指名）。
+驗收紀律本身不進 steering，
 它由腳本與結構保證——說明見
 [docs/acceptance-discipline.md](docs/acceptance-discipline.md)。
 
@@ -107,12 +108,10 @@ steering 只有兩份：`gherkin-guidelines.md`（`scenario-write` 指名）與
 | `trace-check/scripts/trace.sh` — `bind` | ✅ 可用（`--dry-run`、冪等） |
 | `trace-check/scripts/trace.sh` — `verify` | ⛔ stub，`exit 2` |
 | 其餘 SKILL.md | 內容完整，但依賴上面那支腳本 |
-| `mutation-gate/scripts/mutate.sh` | ⛔ 檔案不存在，技術棧未定 |
+| `mutation-gate/scripts/mutate.sh` | ✅ 可用（diff scope 自算，Python/mutmut 實測） |
 
 建議實作順序（不要一次全開）：
 
 1. `grill-capture` + `scenario-write` — 跑 2–3 個 feature，確認 agent 真的把 scenario 當測試寫
-2. 定技術棧 — 這一個決定同時解開 `mutate.sh`、scenario 的 tag-filter 執行、
-   以及 `verify` 的 step definition 檢查（[#2](https://github.com/kido6115/sdd-toolkit/issues/2)）
-3. `mutation-gate` — 門檻從 60% 開始往上調
-4. `trace-verify` + `manual-qa`
+2. `mutation-gate` — 門檻從 60% 開始往上調
+3. `trace-verify` + `manual-qa`（前者仍缺 git 基準線，見 ADR-0008）
