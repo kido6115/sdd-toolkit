@@ -325,9 +325,14 @@ JSON
 #
 #   task 4.1  _Requirements: 3.1, 3.2_
 #             ∩  SCN-042 @REQ-3.1
-#             →  _DoD: SCN-042 由紅轉綠_
+#             →  _Scenarios: SCN-042_
 #
-# 冪等：既有的 _DoD:_ 行會被重算後取代，不會累積。
+# 寫入兩行，各有分工：
+#   - 驗收條件：…       detail bullet，cc-sdd 本來就要求每個子任務有一條
+#                        「observable completion condition」（tasks-generation.md:127）
+#   - _Scenarios: …_    標註，與 _Requirements: / _Boundary: / _Depends: 同一家族
+#
+# 冪等：兩行都會被重算後取代，不會累積。舊的 _DoD:_ 一併清除。
 # ---------------------------------------------------------------
 
 # 每列 = "task_id <TAB> requirements(逗號分隔，可能為空)"
@@ -436,14 +441,20 @@ run_bind() {
           print; next
       }
       /^[[:space:]]*-[[:space:]]*\[[ xX]\]\*?[[:space:]]+[0-9]+\./ { tid = ""; print; next }
-      # 既有的 DoD 行一律丟棄，稍後重算後重寫（冪等）
-      /^[[:space:]]*-[[:space:]]*_DoD:/ { next }
+      # 本 skill 寫過的兩行一律丟棄，稍後重算後重寫（冪等）。
+      # _DoD: 是舊欄位名，一併清掉以便從舊版遷移。
+      /^[[:space:]]*-[[:space:]]*_DoD:/            { next }
+      /^[[:space:]]*-[[:space:]]*_Scenarios:/      { next }
+      /^[[:space:]]*-[[:space:]]*驗收條件：SCN-/   { next }
       /_Requirements:/ {
+          indent = $0; sub(/[^[:space:]].*$/, "", indent)
+          # detail bullet 在 annotation 之前，照 cc-sdd 的排列
+          if (tid != "" && tid in dod)
+              printf "%s- 驗收條件：%s 由紅轉綠（實作前先跑，必須是紅）\n", indent, dod[tid]
           print
-          if (tid != "" && tid in dod) {
-              indent = $0; sub(/[^[:space:]].*$/, "", indent)
-              printf "%s- _DoD: %s 由紅轉綠_\n", indent, dod[tid]
-          }
+          # _Scenarios: 與 _Requirements: / _Boundary: / _Depends: 同一家族
+          if (tid != "" && tid in dod)
+              printf "%s- _Scenarios: %s_\n", indent, dod[tid]
           next
       }
       { print }
@@ -544,14 +555,14 @@ run_verify() {
     printf '%s\n' "$locked_scns" | grep -qx "$scn" || added+=("$scn「$title」")
   done <<< "$current"
 
-  # --- tasks.md 的 _DoD:_ 引用了已不存在的 SCN
+  # --- tasks.md 的 _Scenarios:_ 引用了已不存在的 SCN
   if [ -f "$TASKS_FILE" ]; then
     local cur_scns d
     cur_scns="$(printf '%s\n' "$current" | cut -f1 | sort -u)"
     while IFS= read -r d; do
       [ -n "$d" ] || continue
       printf '%s\n' "$cur_scns" | grep -qx "$d" || binding_broken+=("$d")
-    done < <(grep -oE '_DoD:[^_]*_' "$TASKS_FILE" 2>/dev/null | grep -oE 'SCN-[0-9]+' | sort -u -V || true)
+    done < <(grep -oE '_Scenarios:[^_]*_' "$TASKS_FILE" 2>/dev/null | grep -oE 'SCN-[0-9]+' | sort -u -V || true)
   fi
 
   # --- 缺 step definition（語言相依，指令來自 toolchain.md）

@@ -171,19 +171,29 @@ BC-04「目標儲存空間不足」
 trace-bind 是**寫入**不是檢查。映射走 cc-sdd 既有的 `_Requirements:_`
 標註，取交集，不是語意判斷：
 
+```diff
+  - [ ] 2.1 (P) 實作分頁匯出
+    - 讀取訂單並依上限切頁
++   - 驗收條件：SCN-042, SCN-043 由紅轉綠（實作前先跑，必須是紅）
+    - _Requirements: 3.1, 3.2_
++   - _Scenarios: SCN-042, SCN-043_
+    - _Boundary: ExportService_
 ```
-- [ ] 2.1 (P) 實作分頁匯出
-  - _Requirements: 3.1, 3.2_
-+ - _DoD: SCN-042, SCN-043, SCN-051 由紅轉綠_
-```
+
+兩行各有分工，都用 cc-sdd 既有的形式：
+
+- **`- 驗收條件：…`** 是 detail bullet。cc-sdd 本來就要求每個子任務至少有一條
+  「observable completion condition」（`tasks-generation.md:127`），這是那個位置
+- **`- _Scenarios: …_`** 是標註，與 `_Requirements:` / `_Boundary:` / `_Depends:`
+  同一家族，語意自明，也是冪等比對的錨點
 
 冪等——scenario 增修之後重跑一次即可同步，不會累積重複行。
 
 同時產生 `scenarios.lock`，記錄此刻每條 scenario 的內容雜湊，
 作為閘門 3 的基準線。**要進版控，不要手動改。**
 
-綁定後，每個 task 的 DoD 從「agent 說寫完了」變成
-「這兩條 scenario 由紅轉綠」——機器裁決，不是自我宣稱。
+綁定後，完成的判準從「agent 說寫完了」變成「這幾條 scenario 由紅轉綠」——
+機器裁決，不是自我宣稱。
 
 ---
 
@@ -210,7 +220,7 @@ acceptance-first 由 cc-sdd 的 **Feature Flag Protocol** 強制：加旗標（�
 
 本 toolkit 在這一段的增量只剩一件事，但它是關鍵的一件：
 **cc-sdd 的紅燈是 implementer 自己寫的測試**——它自己挑的、自己知道能過的。
-`trace-bind` 把 DoD 換成「指定 scenario 由紅轉綠」，
+`trace-bind` 把完成判準換成「指定 scenario 由紅轉綠」，
 差別在紅燈的定義權在誰手上。見 [acceptance-discipline.md](acceptance-discipline.md) 第 4 條。
 
 這一段 implementer 該寫的是 **step definition**（在專案測試目錄），
@@ -246,7 +256,7 @@ mutation test 的時間與 token。
 | `scenario_removed` | 整條不見了 |
 | `scenario_added_after_bind` | 偷加了沒經核准的 scenario |
 | `tag_changed` | `@REQ` / `@BC` 被增刪 |
-| `binding_broken` | `_DoD:` 引用了已不存在的 SCN |
+| `binding_broken` | `_Scenarios:` 引用了已不存在的 SCN |
 | `undefined_steps` | 有 scenario 但沒人實作步驟 |
 
 雜湊前會正規化（逐行去空白、丟空行），所以**重排版不誤報，內容變動才報**。

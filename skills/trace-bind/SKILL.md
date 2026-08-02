@@ -1,6 +1,6 @@
 ---
 name: trace-bind
-description: 把 tasks.md 中的每個子任務綁定到它要點亮的 Gherkin scenario，並寫入 _DoD: SCN-xxx 由紅轉綠_。在 kiro-spec-tasks 之後執行。這是寫入操作，會修改 tasks.md。
+description: 把 tasks.md 中的每個子任務綁定到它要點亮的 Gherkin scenario，寫入驗收條件與 _Scenarios: 標註。在 kiro-spec-tasks 之後執行。這是寫入操作，會修改 tasks.md 並產生 scenarios.lock。
 ---
 
 ## 先 dry-run，取得同意再寫
@@ -22,13 +22,31 @@ cc-sdd 的每個子任務都帶 `_Requirements: X.X_`（`tasks-generation.md`
 task 2.1  _Requirements: 3.1, 3.2_
           ∩  SCN-042 @REQ-3.1
           ∩  SCN-051 @REQ-3.2
-          →  _DoD: SCN-042, SCN-051 由紅轉綠_
+          →  _Scenarios: SCN-042, SCN-051_
 ```
 
 所以本 skill **不做判斷**，跟其餘 trace skill 一樣只轉述腳本輸出。
 
-寫入位置：每個子任務的 `_Requirements:_` 行下方，縮排比照。
-**冪等**——既有的 `_DoD:_` 行會被重算後取代，重跑不會累積。
+## 寫入兩行，都用 cc-sdd 既有的形式
+
+```diff
+  - [ ] 2.1 (P) 實作分頁匯出
+    - 讀取訂單並依上限切頁
++   - 驗收條件：SCN-042, SCN-051 由紅轉綠（實作前先跑，必須是紅）
+    - _Requirements: 3.1, 3.2_
++   - _Scenarios: SCN-042, SCN-051_
+    - _Boundary: ExportService_
+```
+
+| 行 | 為什麼是這個形式 |
+|---|---|
+| `- 驗收條件：…` | detail bullet。cc-sdd 本來就要求每個子任務至少有一條「observable completion condition」（`tasks-generation.md:127`），這是那個位置 |
+| `- _Scenarios: …_` | 標註，與 `_Requirements:` / `_Boundary:` / `_Depends:` 同一家族。語意自明，不需要另外解釋 |
+
+**不自創欄位名。** 早期版本用過 `_DoD:`——那是縮寫、是新概念、
+不屬於 cc-sdd 的標註家族，implementer 讀到只能猜。舊欄位在重跑時會自動清除。
+
+**冪等**——兩行都會被重算後取代，重跑不會累積。
 scenario 增修之後重跑一次即可同步。
 
 只有 `X.Y` 編號的子任務會被綁定。`- [ ] 4.` 這種主任務是分組標頭，

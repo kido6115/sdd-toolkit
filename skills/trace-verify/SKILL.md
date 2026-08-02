@@ -33,7 +33,7 @@ description: 實作完成後比對 scenarios.lock，驗證 Gherkin scenario 是�
 | `scenario_removed` | 整條不見了 |
 | `scenario_added_after_bind` | 偷加了沒經過核准的 scenario |
 | `tag_changed` | `@REQ` / `@BC` 被增刪，追溯鏈變動 |
-| `binding_broken` | `tasks.md` 的 `_DoD:` 引用了已不存在的 SCN |
+| `binding_broken` | `tasks.md` 的 `_Scenarios:` 引用了已不存在的 SCN |
 | `undefined_steps` | 有 scenario 但沒人實作步驟——等同不存在 |
 
 ### `scenario_modified` 要人來判斷
