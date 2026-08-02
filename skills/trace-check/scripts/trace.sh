@@ -362,6 +362,12 @@ parse_tasks() {
   ' "$TASKS_FILE"
 }
 
+# 從 toolchain.md 的 ini 區塊取值（KEY=VALUE，取第一個非註解命中）
+toolchain_get() {
+  [ -f "$TOOLCHAIN_FILE" ] || return 0
+  grep -oE "^${1}=.*$" "$TOOLCHAIN_FILE" 2>/dev/null | head -1 | cut -d= -f2- || true
+}
+
 run_bind() {
   [ -f "$TASKS_FILE" ] || die "tasks.md not found: $TASKS_FILE — 先跑 /kiro-spec-tasks"
   [ -d "$FEATURE_GLOB" ] || die "features dir not found: $FEATURE_GLOB — 先跑 /scenario-write"
@@ -386,6 +392,12 @@ run_bind() {
       }
       if (scn != "" && reqs != "") print scn "\t" reqs
     }' | sort -u -V)"
+
+  # 依 tag 跑指定 scenario 的指令。比照 FEATURE_DRYRUN_CMD 的慣例：
+  # 缺席不等於豁免，要豁免必須明確設為 "-"。
+  local test_cmd_tpl
+  test_cmd_tpl="$(toolchain_get FEATURE_TEST_CMD)"
+  [ -n "$test_cmd_tpl" ] || die "toolchain.md 未定義 FEATURE_TEST_CMD ($TOOLCHAIN_FILE)。沒有它，驗收條件只寫得出「點亮哪幾條」而寫不出「怎麼跑」，紅燈訊號會被整套的既有綠燈稀釋。若本專案無法依 tag 選取，明確設為 '-' 以豁免"
 
   local tasks
   tasks="$(parse_tasks)"
@@ -425,8 +437,15 @@ run_bind() {
     # paste -d 接受的是「循環使用的單字元清單」，不是分隔字串，
     # 所以 -d', ' 會交替用逗號與空白。先用逗號接，再補空白。
     joined="$(printf '%s\n' "${matched[@]}" | sort -u -V | paste -sd',' - | sed 's/,/, /g')"
-    printf '%s\t%s\n' "$tid" "$joined" >> "$plan_file"
-    bindings+=("{\"task\":\"$(json_escape "$tid")\",\"requirements\":\"$(json_escape "$treqs")\",\"scenarios\":\"$(json_escape "$joined")\"}")
+    local cmd=""
+    if [ "$test_cmd_tpl" != "-" ]; then
+      # {TAGS} 的格式是 "SCN-042 or SCN-043"，交由測試框架的 tag 運算式解析
+      local tag_expr
+      tag_expr="$(printf '%s\n' "${matched[@]}" | sort -u -V | paste -sd'|' - | sed 's/|/ or /g')"
+      cmd="${test_cmd_tpl//\{TAGS\}/$tag_expr}"
+    fi
+    printf '%s\t%s\t%s\n' "$tid" "$joined" "$cmd" >> "$plan_file"
+    bindings+=("{\"task\":\"$(json_escape "$tid")\",\"requirements\":\"$(json_escape "$treqs")\",\"scenarios\":\"$(json_escape "$joined")\",\"command\":\"$(json_escape "$cmd")\"}")
   done <<< "$tasks"
 
   # --- 寫入
@@ -434,7 +453,7 @@ run_bind() {
     local tmp; tmp="$(mktemp)"
     awk -v plan="$plan_file" '
       BEGIN {
-        while ((getline l < plan) > 0) { split(l, a, "\t"); dod[a[1]] = a[2] }
+        while ((getline l < plan) > 0) { split(l, a, "\t"); dod[a[1]] = a[2]; cmd[a[1]] = a[3] }
       }
       /^[[:space:]]*-[[:space:]]*\[[ xX]\]\*?[[:space:]]+[0-9]+\.[0-9]+/ {
           match($0, /[0-9]+\.[0-9]+/); tid = substr($0, RSTART, RLENGTH)
@@ -445,12 +464,17 @@ run_bind() {
       # _DoD: 是舊欄位名，一併清掉以便從舊版遷移。
       /^[[:space:]]*-[[:space:]]*_DoD:/            { next }
       /^[[:space:]]*-[[:space:]]*_Scenarios:/      { next }
-      /^[[:space:]]*-[[:space:]]*驗收條件：SCN-/   { next }
+      /^[[:space:]]*-[[:space:]]*驗收條件：SCN-/   { skipcmd=1; next }
+      # 驗收條件下方那一行是本 skill 寫的執行指令，一併清掉
+      skipcmd == 1 { skipcmd=0; if ($0 ~ /^[[:space:]]*`.*`[[:space:]]*$/) next }
       /_Requirements:/ {
           indent = $0; sub(/[^[:space:]].*$/, "", indent)
           # detail bullet 在 annotation 之前，照 cc-sdd 的排列
-          if (tid != "" && tid in dod)
+          if (tid != "" && tid in dod) {
               printf "%s- 驗收條件：%s 由紅轉綠（實作前先跑，必須是紅）\n", indent, dod[tid]
+              if (cmd[tid] != "")
+                  printf "%s  `%s`\n", indent, cmd[tid]
+          }
           print
           # _Scenarios: 與 _Requirements: / _Boundary: / _Depends: 同一家族
           if (tid != "" && tid in dod)

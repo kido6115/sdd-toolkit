@@ -79,6 +79,7 @@ step definition 是實作產物，放專案測試目錄，正常撰寫。
 - [ ] 2.1 (P) 實作分頁匯出
   - 讀取訂單並依上限切頁
   - 驗收條件：SCN-042, SCN-043 由紅轉綠（實作前先跑，必須是紅）
+    `python -m pytest -m "SCN-042 or SCN-043"`
   - _Requirements: 3.1, 3.2_
   - _Scenarios: SCN-042, SCN-043_
   - _Boundary: ExportService_
@@ -87,9 +88,11 @@ step definition 是實作產物，放專案測試目錄，正常撰寫。
 交付機制選 `tasks.md` 而非 steering，是因為 implementer subagent
 一定會讀 `tasks.md`——不依賴任何 steering 載入機制。
 
-**目前只做到一半。** 寫下了「點亮哪兩條」，沒說「怎麼單獨跑那兩條」。
-`kiro-impl` 推導出的是跑整套的指令，紅燈訊號會被既有的綠燈稀釋。
-`toolchain.md` 已有 `FEATURE_TEST_CMD`，缺的是把它寫進驗收條件那一行。
+指令由 `toolchain.md` 的 `FEATURE_TEST_CMD` 代入，`FEATURE_TEST_CMD`
+缺席時 `exit 2`——**缺席不等於豁免**，要豁免必須明確設為 `-`。
+
+沒有這一行的話，`kiro-impl` 只推導得出跑整套的指令，紅燈訊號會被
+既有的綠燈稀釋，「實作前先跑確認是紅的」就做不到。
 
 **若失效：核心命題就沒了。** 這條是整套的樞紐。
 
@@ -131,28 +134,26 @@ pattern 可能不符排版，而**不是**回報「覆蓋率 0/0 通過」。
 
 ---
 
-## 現在還裸露的一處
+## 七條都有機制了
 
-| 紀律 | 狀態 |
+| 紀律 | 由誰保證 |
 |---|---|
-| 1 | ✅ `trace.sh check` |
-| 2 | ✅ `trace.sh verify` 的 `undefined_steps`（走 `toolchain.md` 的 dry-run） |
-| 3 | ✅ 結構 + `trace.sh verify` 的雜湊比對，兩層 |
-| 4 | ⚠️ **一半**——有寫下要點亮哪幾條，但沒帶「怎麼單獨跑那幾條」的指令 |
-| 5 | ⚠️ 同上 |
-| 6 | ✅ `mutate.sh`（diff scope 自算） |
-| 7 | ✅ 各 SKILL.md + 腳本的 exit 2 自檢 |
+| 1 | `trace.sh check` |
+| 2 | `trace.sh verify` 的 `undefined_steps`（走 `toolchain.md` 的 dry-run） |
+| 3 | 結構 + `trace.sh verify` 的雜湊比對，兩層 |
+| 4 | `trace-bind` 寫入的驗收條件（含執行指令）與 `_Scenarios:` |
+| 5 | 同上 |
+| 6 | `mutate.sh`（diff scope 自算） |
+| 7 | 各 SKILL.md + 腳本的 exit 2 自檢 |
 
-剩下的那一半：`toolchain.md` 已定義 `FEATURE_TEST_CMD`（依 tag 跑指定
-scenario），但 `trace-bind` 目前沒有把實際指令寫進驗收條件那一行。
-implementer 拿到的是「SCN-042, SCN-043 由紅轉綠」，得自己想辦法跑。
+**但「有機制」不等於「驗證過」。** 兩個承重假設還沒實跑驗證：
 
-`kiro-impl` 的 preflight 推導出的是**跑整套**的指令，所以：
+| 假設 | 若不成立 |
+|---|---|
+| `_Scenarios:` 與驗收條件行會傳達到 implementer subagent（ADR-0013） | 紀律 4 的交付機制要重想 |
+| `kiro-review` 會把改 `.feature` 判成 boundary violation（ADR-0008） | 紀律 3 少一層，但 lock 雜湊那層仍在 |
 
-- ✅ 實作後全套變綠 —— 成立
-- ⚠️ 實作前先跑那兩條確認是紅的 —— 精度不足，紅燈訊號被既有綠燈稀釋
-
-追蹤於 [#2](https://github.com/kido6115/sdd-toolkit/issues/2)。
+前者比較要緊——它是核心命題的交付路徑。
 
 ---
 

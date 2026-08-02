@@ -33,6 +33,7 @@ task 2.1  _Requirements: 3.1, 3.2_
   - [ ] 2.1 (P) 實作分頁匯出
     - 讀取訂單並依上限切頁
 +   - 驗收條件：SCN-042, SCN-051 由紅轉綠（實作前先跑，必須是紅）
++     `python -m pytest -m "SCN-042 or SCN-051"`
     - _Requirements: 3.1, 3.2_
 +   - _Scenarios: SCN-042, SCN-051_
     - _Boundary: ExportService_
@@ -43,10 +44,20 @@ task 2.1  _Requirements: 3.1, 3.2_
 | `- 驗收條件：…` | detail bullet。cc-sdd 本來就要求每個子任務至少有一條「observable completion condition」（`tasks-generation.md:127`），這是那個位置 |
 | `- _Scenarios: …_` | 標註，與 `_Requirements:` / `_Boundary:` / `_Depends:` 同一家族。語意自明，不需要另外解釋 |
 
+指令那一行由 `toolchain.md` 的 `FEATURE_TEST_CMD` 代入該 task 綁定的 SCN
+（`{TAGS}` → `SCN-042 or SCN-051`）。implementer 讀 `tasks.md` 就直接拿得到
+可執行的指令，**不依賴任何 steering 載入機制**。
+
+沒有它的話，`kiro-impl` 只推導得出跑整套的指令——紅燈訊號會被整套的
+既有綠燈稀釋，「實作前先跑確認是紅的」就做不到。
+
+`FEATURE_TEST_CMD` **缺席不等於豁免**：未定義時 `exit 2`。
+若本專案無法依 tag 選取，明確設為 `-`，那一行就不寫。
+
 **不自創欄位名。** 早期版本用過 `_DoD:`——那是縮寫、是新概念、
 不屬於 cc-sdd 的標註家族，implementer 讀到只能猜。舊欄位在重跑時會自動清除。
 
-**冪等**——兩行都會被重算後取代，重跑不會累積。
+**冪等**——三行都會被重算後取代，重跑不會累積；從有指令改成豁免時舊指令行會被清掉。
 scenario 增修之後重跑一次即可同步。
 
 只有 `X.Y` 編號的子任務會被綁定。`- [ ] 4.` 這種主任務是分組標頭，

@@ -175,17 +175,24 @@ trace-bind 是**寫入**不是檢查。映射走 cc-sdd 既有的 `_Requirements
   - [ ] 2.1 (P) 實作分頁匯出
     - 讀取訂單並依上限切頁
 +   - 驗收條件：SCN-042, SCN-043 由紅轉綠（實作前先跑，必須是紅）
++     `python -m pytest -m "SCN-042 or SCN-043"`
     - _Requirements: 3.1, 3.2_
 +   - _Scenarios: SCN-042, SCN-043_
     - _Boundary: ExportService_
 ```
 
-兩行各有分工，都用 cc-sdd 既有的形式：
+都用 cc-sdd 既有的形式：
 
 - **`- 驗收條件：…`** 是 detail bullet。cc-sdd 本來就要求每個子任務至少有一條
   「observable completion condition」（`tasks-generation.md:127`），這是那個位置
+- 底下那行**可執行指令**由 `toolchain.md` 的 `FEATURE_TEST_CMD` 代入該 task
+  綁定的 SCN。implementer 讀 `tasks.md` 就直接拿得到，不依賴 steering 載入機制
 - **`- _Scenarios: …_`** 是標註，與 `_Requirements:` / `_Boundary:` / `_Depends:`
   同一家族，語意自明，也是冪等比對的錨點
+
+沒有那行指令的話，`kiro-impl` 只推導得出跑整套的指令——紅燈訊號會被
+既有的綠燈稀釋，「實作前先跑確認是紅的」就做不到。
+`FEATURE_TEST_CMD` **缺席不等於豁免**，未定義時 `exit 2`。
 
 冪等——scenario 增修之後重跑一次即可同步，不會累積重複行。
 

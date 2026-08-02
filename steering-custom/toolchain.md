@@ -5,7 +5,9 @@
 本檔的預設值是 **Python（pytest-bdd + mutmut）**。
 其他語言的對應寫在下方，換掉這三個變數即可，其餘 skill 與腳本不用動。
 
-`mutation-gate` 與 `trace-verify` 會讀本檔。
+`trace-bind`（`FEATURE_TEST_CMD`）、`trace-verify`（`FEATURE_DRYRUN_CMD`）、
+`mutation-gate`（`MUTATION_*`）會讀本檔。三者都遵守**缺席不等於豁免**：
+未定義即 `exit 2`，要豁免必須明確設為 `-`。
 
 ---
 

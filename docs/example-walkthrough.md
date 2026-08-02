@@ -129,13 +129,16 @@ exit 1
   - [ ] 4.1 實作分頁匯出
     - 讀取訂單並依上限切頁
 +   - 驗收條件：SCN-042 由紅轉綠（實作前先跑，必須是紅）
++     `python -m pytest -m "SCN-042"`
     - _Requirements: 3.1_
 +   - _Scenarios: SCN-042_
     - _Boundary: ExportService_
 ```
 
-寫入的兩行都用 cc-sdd 既有的形式：detail bullet 對應它要求的
+都用 cc-sdd 既有的形式：detail bullet 對應它要求的
 「observable completion condition」，`_Scenarios:` 與 `_Requirements:` 同一家族。
+指令那行由 `toolchain.md` 的 `FEATURE_TEST_CMD` 代入——**沒有它，
+`kiro-impl` 只跑得了整套，紅燈訊號會被既有的綠燈稀釋。**
 
 **這是整套的樞紐。**
 

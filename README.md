@@ -117,7 +117,7 @@ steering 三份：`gherkin-guidelines.md`（`scenario-write` 指名）、
 |---|---|
 | `extract_req_ids` 的 regex | 未對照真實 `requirements.md`。抓到 0 筆時 `exit 2`，不會靜默出錯 |
 | Java / JS / Go 的 `toolchain.md` 設定 | 依框架文件寫出，未實測。特別要驗 dry-run 的 exit code |
-| scenario 的單獨執行指令 | 綁定寫下了「點亮哪幾條」，但沒帶怎麼跑（[#2](https://github.com/kido6115/sdd-toolkit/issues/2)） |
+| `_Scenarios:` 是否傳達到 implementer | ADR-0013 未解決。cc-sdd 不認得這個欄位，只能實跑才知道 |
 | 穩定期 mutation 門檻 | 導入期 60% 跑幾週後再調 |
 
 建議實作順序（不要一次全開）：
