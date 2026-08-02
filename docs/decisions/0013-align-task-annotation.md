@@ -34,7 +34,8 @@ implementer 讀到只能從「由紅轉綠」四個字猜。
 
 ## 決策
 
-寫入兩行，各自用 cc-sdd 既有的形式：
+寫入兩行，各自用 cc-sdd 既有的形式（後續補上第三行：可執行的 tag-filter
+指令，見 [#2](https://github.com/kido6115/sdd-toolkit/issues/2)）：
 
 ```diff
   - [ ] 2.1 (P) 實作分頁匯出

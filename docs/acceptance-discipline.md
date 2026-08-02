@@ -114,6 +114,8 @@ step definition 是實作產物，放專案測試目錄，正常撰寫。
 實測同一個 repo 全域 50%、diff scope 42%。
 
 門檻讀 `quality-gates.md`，執行指令讀 `toolchain.md`。
+**缺席不等於豁免**：`MUTATION_RUN_CMD` 未定義時 `exit 2`，
+要豁免必須明確設為 `-`（回 `EXEMPT`，標明這道閘門本次沒有守）。
 
 全域分數容易靠灌水達標，diff scope 藏不住。存活的 mutant 必須逐一說明：
 測試不夠嚴，還是該 mutant 等價。

@@ -1,9 +1,9 @@
 # Toolchain
 
-[Purpose: 三個與技術棧綁定的指令。判定邏輯語言無關，只有這裡要換]
+[Purpose: 與技術棧綁定的指令。判定邏輯語言無關，只有這裡要換]
 
 本檔的預設值是 **Python（pytest-bdd + mutmut）**。
-其他語言的對應寫在下方，換掉這三個變數即可，其餘 skill 與腳本不用動。
+其他語言的對應寫在下方，換掉這幾個變數即可，其餘 skill 與腳本不用動。
 
 `trace-bind`（`FEATURE_TEST_CMD`）、`trace-verify`（`FEATURE_DRYRUN_CMD`）、
 `mutation-gate`（`MUTATION_*`）會讀本檔。三者都遵守**缺席不等於豁免**：
@@ -11,7 +11,7 @@
 
 ---
 
-## 三個指令
+## 指令
 
 ```ini
 # 依 tag 跑指定 scenario。{TAGS} 由呼叫端代入，格式為 "SCN-042 or SCN-043"
@@ -95,7 +95,7 @@ Step Given "一個沒人實作的前置" is not defined in the scenario "沒有�
 
 ## 其他語言
 
-只換這三個變數，判定邏輯不動。
+只換這幾個變數，判定邏輯不動。
 
 ### JavaScript / TypeScript
 
@@ -124,7 +124,7 @@ PIT 另有 `scmMutationCoverage` goal，直接以版控變更決定範圍。
 ```ini
 FEATURE_TEST_CMD=go test ./... -godog.tags="@{TAGS}"
 FEATURE_DRYRUN_CMD=go test ./...      # godog 預設就回報 undefined steps 並給 snippet
-MUTATION_RUN_CMD=                     # 生態較弱，見下
+MUTATION_RUN_CMD=-                    # 明確豁免，生態較弱，見下
 ```
 
 **Go 的 mutation testing 沒有成熟選項**（go-mutesting、ooze 皆維護不積極）。

@@ -95,7 +95,7 @@ steering 三份：`gherkin-guidelines.md`（`scenario-write` 指名）、
 
 - [docs/workflow.md](docs/workflow.md) — 一個 feature 從頭到尾的完整路徑
 - [docs/example-walkthrough.md](docs/example-walkthrough.md) — 同一條需求走完五道閘門的實例
-- [docs/acceptance-discipline.md](docs/acceptance-discipline.md) — 七條紀律各由什麼機制保證，以及還有哪幾處裸露
+- [docs/acceptance-discipline.md](docs/acceptance-discipline.md) — 七條紀律各由什麼機制保證，以及哪些假設還沒實跑驗證
 - [docs/decisions/](docs/decisions/) — 設計取捨的紀錄
 
 ## 狀態

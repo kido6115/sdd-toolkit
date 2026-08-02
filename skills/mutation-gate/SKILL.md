@@ -8,7 +8,9 @@ description: 對本次 diff 涉及的檔案執行 mutation testing，比對 qual
 
 **不要自行判讀通過與否。** 判定來自 exit code：
 
-- `0` = 達標（或 `verdict: SKIPPED`，本次 diff 沒有可 mutate 的檔案）
+- `0` = 達標，或以下兩種**不是通過但也不擋流程**的情況：
+  - `verdict: SKIPPED` —— 本次 diff 沒有可 mutate 的檔案
+  - `verdict: EXEMPT` —— `toolchain.md` 明確設 `MUTATION_RUN_CMD=-`，本次未量化測試強度
 - `1` = 未達門檻
 - `2` = 執行錯誤
 
@@ -46,9 +48,10 @@ diff scope 3 killed /  7 total = 42%
 
 ## exit 2 的常見原因
 
-- `toolchain.md` 未定義 `MUTATION_RUN_CMD` —— 若本專案的語言沒有可用的
-  mutation 工具（例如 Go），請在 `quality-gates.md` 明確標為**不適用**，
-  不要留一道跑不動的閘門假裝有守
+- `toolchain.md` 未定義 `MUTATION_RUN_CMD` —— **缺席不等於豁免**，
+  與 `FEATURE_TEST_CMD` / `FEATURE_DRYRUN_CMD` 同一慣例。
+  若本專案的語言沒有可用的 mutation 工具（例如 Go），明確設為 `-`，
+  並在 `quality-gates.md` 把門檻標為不適用。不要留一道跑不動的閘門假裝有守
 - **diff scope 內沒有任何 mutant** —— 通常是模組前綴推導錯誤
   （改到的檔案不在被 mutate 的來源目錄）。**這不算通過**，
   腳本刻意在這裡停下而不是回報「0/0 達標」

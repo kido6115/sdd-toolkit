@@ -1,6 +1,6 @@
 ---
 name: trace-bind
-description: 把 tasks.md 中的每個子任務綁定到它要點亮的 Gherkin scenario，寫入驗收條件與 _Scenarios: 標註。在 kiro-spec-tasks 之後執行。這是寫入操作，會修改 tasks.md 並產生 scenarios.lock。
+description: 把 tasks.md 中的每個子任務綁定到它要點亮的 Gherkin scenario，寫入驗收條件、可執行的 tag-filter 指令與 _Scenarios: 標註。在 kiro-spec-tasks 之後執行。這是寫入操作，會修改 tasks.md 並產生 scenarios.lock。
 ---
 
 ## 先 dry-run，取得同意再寫
@@ -27,7 +27,7 @@ task 2.1  _Requirements: 3.1, 3.2_
 
 所以本 skill **不做判斷**，跟其餘 trace skill 一樣只轉述腳本輸出。
 
-## 寫入兩行，都用 cc-sdd 既有的形式
+## 寫入三行，都用 cc-sdd 既有的形式
 
 ```diff
   - [ ] 2.1 (P) 實作分頁匯出

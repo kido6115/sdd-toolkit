@@ -44,7 +44,21 @@ toolchain_get() {
 MUTATION_RUN_CMD="$(toolchain_get MUTATION_RUN_CMD)"
 MUTATION_RESULT_CMD="$(toolchain_get MUTATION_RESULT_CMD)"
 
-[ -n "$MUTATION_RUN_CMD" ] || die "toolchain.md 未定義 MUTATION_RUN_CMD —— 若本專案的語言沒有可用的 mutation 工具（例如 Go），請在 quality-gates.md 明確標為不適用，不要留一道跑不動的閘門"
+# 缺席不等於豁免，與 FEATURE_TEST_CMD / FEATURE_DRYRUN_CMD 同一慣例。
+[ -n "$MUTATION_RUN_CMD" ] || die "toolchain.md 未定義 MUTATION_RUN_CMD ($TOOLCHAIN)。若本專案的語言沒有可用的 mutation 工具（例如 Go），明確設為 '-' 以豁免，並在 quality-gates.md 把門檻標為不適用；缺席不等於豁免"
+
+if [ "$MUTATION_RUN_CMD" = "-" ]; then
+  # 明確豁免。不是通過——標明這道閘門本次沒有守。
+  cat <<JSON
+{
+  "scope": "exempt",
+  "note": "toolchain.md 明確豁免 mutation testing（MUTATION_RUN_CMD=-）。本次未量化測試強度",
+  "verdict": "EXEMPT"
+}
+JSON
+  exit 0
+fi
+
 [ -n "$MUTATION_RESULT_CMD" ] || die "toolchain.md 未定義 MUTATION_RESULT_CMD"
 
 # 門檻：優先用 --threshold，否則從 quality-gates.md 的表格抓第一個百分比
