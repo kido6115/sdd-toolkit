@@ -55,7 +55,7 @@ sync 會偵測 code drift 並 additive 更新（既有的使用者修改不會�
 ## Phase 1 — 意圖對齊
 
 ```
-npx <grill-me-package>       # TODO: 補上實際指令
+npx skills@latest add mattpocock/skills --skill=grill-me    # 每專案一次
 /kiro-discovery "<一句話描述>"
 /grill-me                    # 需求探討
 /grill-capture               # 落檔成結構化的 grill-notes.md

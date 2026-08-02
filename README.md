@@ -19,7 +19,7 @@ agent 數量是 cc-sdd 的實作細節，不是這裡的決策軸。見 [ADR-000
 | 層 | 來源 | 說明 |
 |---|---|---|
 | 主體流程 | cc-sdd (17 skills) | steering / discovery / spec / impl / review / validate |
-| 意圖對齊 | grill-me (mattpocock) | 需求探討與情節探討各盤問一次 |
+| 意圖對齊 | grill-me (mattpocock) | 需求探討與情節探討各盤問一次。`npx skills@latest add mattpocock/skills --skill=grill-me` |
 | **盤問落檔** | grill-capture | 本 repo。配發 `[BC-nn]`，讓盤問結果進入驗證鏈 |
 | Gherkin 品質 | gherkin-guidelines-for-ai | 掛進 steering |
 | **驗收成品** | scenario-write | 本 repo |
@@ -67,7 +67,10 @@ scenario 用不含語意的流水號。見 [ADR-0007](docs/decisions/0007-scenar
 沒有安裝腳本，手動接線：
 
 ```bash
-# skills
+# grill-me（外部相依，Phase 1 與 Phase 2 都會用到）
+npx skills@latest add mattpocock/skills --skill=grill-me
+
+# 本 repo 的 skills
 cp -r skills/* /path/to/project/.claude/skills/
 
 # steering（複製後由該專案自行維護，不要 symlink 回來）

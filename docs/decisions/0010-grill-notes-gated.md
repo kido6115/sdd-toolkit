@@ -79,7 +79,13 @@ scenario tag 裡出現，`trace.sh` 也只在單一 `$SPEC_PATH` 內比對，
 最後一項是本決策的已知上限：它把「完全沒接」變成「編號層接上了」，
 不是把語意也自動化了。
 
-## 未解決
+## 安裝
 
-`grill-me` 的實際安裝指令尚未確認（npm 上找不到 `grill-me`、
-`@mattpocock/grill-me`、`grillme`）。`workflow.md` Phase 1 目前是佔位符。
+```bash
+npx skills@latest add mattpocock/skills --skill=grill-me
+```
+
+透過 `skills` 這個 agent skill 生態的 CLI 安裝，不是獨立的 npm 套件——
+這是先前在 npm 上找不到 `grill-me` / `@mattpocock/grill-me` / `grillme` 的原因。
+
+每專案一次，與 Phase 0 的 `cp` 同性質。
