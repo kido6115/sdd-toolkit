@@ -21,6 +21,13 @@ steering 檔案要被讀到，唯一的路徑是某個會被觸發的 skill 在�
 
 ## 逐條稽核
 
+> 本表是**決策當時的快照**，不隨實作更新——`verify` 與 `mutate.sh` 其後已實作
+> （ADR-0012），綁定的欄位名也已從 `_DoD:` 改為驗收條件 bullet + `_Scenarios:`
+> （ADR-0013）。當前狀態見 [docs/acceptance-discipline.md](../acceptance-discipline.md)。
+>
+> 本決策的論點不受影響：重點是「這些條文都不靠 steering 載入生效」，
+> 而不是各由哪支腳本保證。
+
 | 條 | 實際由誰保證 |
 |---|---|
 | 1. 每條驗收條件至少一個 scenario | `trace.sh check` 的差集，exit 1 |

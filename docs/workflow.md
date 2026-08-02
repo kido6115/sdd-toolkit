@@ -268,7 +268,7 @@ mutation test 的時間與 token。
 | 時機 | 動作 | 抓什麼 |
 |---|---|---|
 | requirements 後 | check | 需求沒測到 / 測了沒需求 |
-| tasks 後 | bind | 建立綁定，定義 DoD |
+| tasks 後 | bind | 建立綁定，寫入驗收條件與 `_Scenarios:` |
 | impl 後 | verify | scenario 被竄改 / 刪除 / 偷加 / 缺步驟實作 |
 
 **只做第一次是最常見的偷懶**，那樣它就退化成一次性檢查。
