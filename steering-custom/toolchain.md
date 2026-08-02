@@ -63,6 +63,11 @@ def pytest_configure(config):
 `cmd && echo OK` 這種寫法會在有缺步驟時報成功——正是本 repo 最忌諱的
 「靜默放行」。`trace-verify` 的實作要注意這點。
 
+**dry-run 自己炸掉時也一樣不能信。** `.feature` 語法錯會讓 pytest 回
+`INTERNALERROR` 且 exit `3`——與「全部實作完」同碼，輸出裡也沒有
+`is not defined`。`trace.sh verify` 會偵測錯誤訊號並 `exit 2`。
+為其他語言加設定時要一併考慮這種情況。
+
 輸出範例：
 
 ```

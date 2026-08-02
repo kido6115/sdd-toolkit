@@ -159,7 +159,7 @@ implementer 自己挑的測試——它自己寫的、自己知道能過的。�
 ```
 kiro-review  VERDICT: REJECTED
   Boundary Violation: 修改了 .kiro/specs/export/features/export.feature
-  該路徑不在 task 4.1 的 _Boundary:_ src/export/ 範圍內
+  該檔案不屬於 task 2.1 的 _Boundary: ExportService_
 ```
 
 那句話說的是「你不該碰那個檔案」。`trace-verify` 補的是另一句——

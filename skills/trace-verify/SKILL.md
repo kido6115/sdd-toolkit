@@ -74,3 +74,27 @@ SCN-042 內容與標題皆變更：「分頁匯出」→「匯出大量訂單」
 > ⚠️ step definition 的檢查**一律解析輸出，不看 exit code**。
 > pytest 的 `--generate-missing` 在「有缺步驟」時回 `0`、「全部實作完」
 > 時回 `3`——是反的。細節見 `.kiro/steering/toolchain.md`。
+>
+> dry-run 自己炸掉時（例如 `.feature` 語法錯）輸出裡也不會有
+> `is not defined`，exit code 又與「乾淨」同為 `3`。腳本會偵測
+> `INTERNALERROR` / `Parser errors` 這類訊號並 `exit 2`——
+> **跑不起來不等於沒有缺步驟。**
+
+## 這道檢查抓不到什麼
+
+它問的是「這個步驟有沒有對應的函式」，不是「那個函式有沒有斷言」。
+
+```python
+@then('產生 3 個檔案')
+def c(): pass          # 空實作，檢查照樣通過
+```
+
+實測：全部步驟寫成 `pass`，`undefined_steps` 為 0、測試 2 passed。
+
+空實作由另外兩道守：
+
+- **紅燈**——步驟都是 `pass` 的話，`kiro-impl` 旗標 OFF 時測試會變綠，
+  Feature Flag Protocol 判定「測試沒在測該測的東西，退回重寫」。
+  但這要求紅燈對象是綁定的 scenario，也就是
+  [#2](https://github.com/kido6115/sdd-toolkit/issues/2)
+- **`mutation-gate`**——空斷言殺不掉任何 mutant，分數會塌

@@ -579,6 +579,12 @@ run_verify() {
     # 「全部實作完」時回 3——反的。一律解析輸出。
     local out
     out="$(eval "${dryrun_cmd//\{FEATURE\}/$FEATURE}" 2>&1 || true)"
+    # dry-run 本身炸掉（例如 .feature 語法錯）時，輸出裡不會有 "is not defined"，
+    # exit code 又與「乾淨」同為 3——會被誤判成沒有缺步驟。
+    # 跑不起來 ≠ 沒問題，一律 exit 2。
+    if printf '%s' "$out" | grep -qE 'INTERNALERROR|Parser errors|ParseError|Traceback \(most recent'; then
+      die "step definition 檢查跑不起來（可能是 .feature 語法錯）。跑不起來不等於沒有缺步驟，指令：${dryrun_cmd//\{FEATURE\}/$FEATURE}"
+    fi
     while IFS= read -r l; do
       [ -n "$l" ] && undefined_steps+=("$l")
     done < <(printf '%s\n' "$out" | grep -E 'is not defined|undefined' | sed 's/^[[:space:]]*//' | head -20 || true)
