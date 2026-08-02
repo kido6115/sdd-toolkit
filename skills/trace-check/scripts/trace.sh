@@ -80,6 +80,32 @@ REQ_FILE="$SPEC_PATH/requirements.md"
 GRILL_FILE="$SPEC_PATH/grill-notes.md"
 DESIGN_FILE="$SPEC_PATH/design.md"
 TASKS_FILE="$SPEC_PATH/tasks.md"
+LOCK_FILE="$SPEC_PATH/scenarios.lock"
+TOOLCHAIN_FILE="${KIRO_DIR:-.kiro}/steering/toolchain.md"
+
+hash_body() { printf '%s' "$1" | sha256sum | cut -c1-12; }
+
+# 從一串 tag 取出指定前綴的 ID，逗號分隔；無則回 "-"
+tags_of() {
+  local out
+  out="$(printf '%s\n' "$1" | grep -oE "@$2-[0-9.]+" | sed "s/^@//" | sort -u -V | paste -sd',' - || true)"
+  printf '%s' "${out:--}"
+}
+
+# 產生 lock 內容（stdout）。trace-bind 寫入，trace-verify 比對。
+build_lock() {
+  printf '# scenarios.lock —— 由 trace-bind 產生，勿手動修改\n'
+  printf '# SCN\thash\tREQ\tBC\tfile\ttitle\n'
+  local tags title file body scn
+  while IFS=$'\t' read -r tags title file body; do
+    [ -n "$title" ] || continue
+    scn="$(printf '%s\n' "$tags" | grep -oE '@SCN-[0-9]+' | head -1 | tr -d '@' || true)"
+    [ -n "$scn" ] || continue
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$scn" "$(hash_body "$body")" "$(tags_of "$tags" REQ)" "$(tags_of "$tags" BC)" \
+      "${file##*/}" "$title"
+  done < <(parse_scenarios_full) | sort -V
+}
 
 json_escape() {
   # 轉義 JSON 字串內容：反斜線、雙引號、控制字元
@@ -116,6 +142,40 @@ extract_bc_ids() {
   # grill-notes.md 的邊界條件編號，格式 "- [BC-01] 描述"
   grep -oE '^[[:space:]]*-[[:space:]]*\[BC-[0-9]+\]' "$GRILL_FILE" 2>/dev/null \
     | grep -oE 'BC-[0-9]+' | sort -u -V || true
+}
+
+# 解析 scenario 並附正規化後的內容，供 lock 比對。
+# 每列 TSV = tags <TAB> title <TAB> file <TAB> body
+# body 是 Scenario 標題與其後所有步驟（含 Examples），逐行去除前後空白、
+# 丟棄空行後以 \x1f 接起——這樣重排版不會誤報，內容變動才會。
+parse_scenarios_full() {
+  awk '
+    function emit() {
+      if (cur != "") print curtags "\t" curtitle "\t" curfile "\t" body
+      cur=""; body=""
+    }
+    FNR==1 { emit(); ftags=""; pending="" }
+    /^[[:space:]]*@/                      { emit(); pending=$0; next }
+    /^[[:space:]]*Feature:/               { emit(); ftags=pending; pending=""; next }
+    /^[[:space:]]*Scenario( Outline)?:/ {
+        emit()
+        line=$0; sub(/^[[:space:]]*/,"",line); sub(/[[:space:]]*$/,"",line)
+        curtitle=line; sub(/^Scenario( Outline)?:[[:space:]]*/, "", curtitle)
+        gsub(/\t/, " ", curtitle)
+        curtags=ftags " " pending; gsub(/\t/, " ", curtags)
+        curfile=FILENAME
+        cur="y"; body=line
+        pending=""
+        next
+    }
+    {
+        if (cur != "") {
+            l=$0; sub(/^[[:space:]]*/,"",l); sub(/[[:space:]]*$/,"",l)
+            if (l != "") { gsub(/\t/," ",l); body = body "\037" l }
+        }
+    }
+    END { emit() }
+  ' "$FEATURE_GLOB"/*.feature
 }
 
 # 解析 scenario：每列一條，TSV = tags <TAB> title <TAB> file
@@ -390,6 +450,12 @@ run_bind() {
     ' "$TASKS_FILE" > "$tmp" && mv "$tmp" "$TASKS_FILE"
   fi
 
+  # scenarios.lock：記錄此刻每條 scenario 的內容雜湊，供 trace-verify 比對。
+  # 不依賴 git 歷史——rebase 或 squash 之後基準線仍然有效。
+  if [ "$DRY_RUN" -eq 0 ]; then
+    build_lock > "$LOCK_FILE"
+  fi
+
   local n_tasks n_bound verdict rc
   n_tasks=$(printf '%s\n' "$tasks" | grep -c . || true)
   n_bound=${#bindings[@]}
@@ -422,6 +488,118 @@ JSON
   return $rc
 }
 
+# ---------------------------------------------------------------
+# verify
+#
+# 基準線來自 scenarios.lock（trace-bind 產生），不來自 git 歷史——
+# rebase 或 squash 之後 git 基準線會失準，雜湊不會。
+#
+# 只驗 cc-sdd 結構上看不見的那一層。需求涵蓋、設計漂移、跨 task 整合
+# 由 kiro-validate-impl 負責，本模式一律不重複檢查。
+# ---------------------------------------------------------------
+
+run_verify() {
+  [ -f "$LOCK_FILE" ] || die "scenarios.lock not found: $LOCK_FILE — 先跑 /trace-bind"
+  [ -d "$FEATURE_GLOB" ] || die "features dir not found: $FEATURE_GLOB"
+  compgen -G "$FEATURE_GLOB/*.feature" >/dev/null || die "no .feature under $FEATURE_GLOB"
+
+  local current
+  current="$(build_lock | grep -v '^#' || true)"
+  [ -n "$current" ] || die "解析不到任何帶 @SCN 的 scenario"
+
+  local modified=() removed=() added=() tag_changed=() binding_broken=()
+
+  # --- 逐條比對 lock
+  local scn hash req bc file title
+  while IFS=$'\t' read -r scn hash req bc file title; do
+    case "$scn" in '#'*|'') continue ;; esac
+    local cur_line
+    cur_line="$(printf '%s\n' "$current" | awk -F'\t' -v s="$scn" '$1==s {print; exit}')"
+    if [ -z "$cur_line" ]; then
+      removed+=("$scn「$title」")
+      continue
+    fi
+    local c_hash c_req c_bc c_title
+    c_hash="$(printf '%s' "$cur_line" | cut -f2)"
+    c_req="$(printf '%s' "$cur_line" | cut -f3)"
+    c_bc="$(printf '%s' "$cur_line" | cut -f4)"
+    c_title="$(printf '%s' "$cur_line" | cut -f6)"
+    if [ "$c_hash" != "$hash" ]; then
+      if [ "$c_title" != "$title" ]; then
+        modified+=("$scn 內容與標題皆變更：「$title」→「$c_title」")
+      else
+        modified+=("$scn「$title」內容變更")
+      fi
+    fi
+    if [ "$c_req" != "$req" ] || [ "$c_bc" != "$bc" ]; then
+      tag_changed+=("$scn「$title」 REQ:$req→$c_req BC:$bc→$c_bc")
+    fi
+  done < "$LOCK_FILE"
+
+  # --- lock 沒有、現在有 → bind 之後新增
+  local locked_scns
+  locked_scns="$(grep -v '^#' "$LOCK_FILE" | cut -f1 | sort -u || true)"
+  while IFS=$'\t' read -r scn hash req bc file title; do
+    [ -n "$scn" ] || continue
+    printf '%s\n' "$locked_scns" | grep -qx "$scn" || added+=("$scn「$title」")
+  done <<< "$current"
+
+  # --- tasks.md 的 _DoD:_ 引用了已不存在的 SCN
+  if [ -f "$TASKS_FILE" ]; then
+    local cur_scns d
+    cur_scns="$(printf '%s\n' "$current" | cut -f1 | sort -u)"
+    while IFS= read -r d; do
+      [ -n "$d" ] || continue
+      printf '%s\n' "$cur_scns" | grep -qx "$d" || binding_broken+=("$d")
+    done < <(grep -oE '_DoD:[^_]*_' "$TASKS_FILE" 2>/dev/null | grep -oE 'SCN-[0-9]+' | sort -u -V || true)
+  fi
+
+  # --- 缺 step definition（語言相依，指令來自 toolchain.md）
+  local undefined_steps=() dryrun_status="OK" dryrun_cmd=""
+  if [ -f "$TOOLCHAIN_FILE" ]; then
+    dryrun_cmd="$(grep -oE '^FEATURE_DRYRUN_CMD=.*$' "$TOOLCHAIN_FILE" 2>/dev/null | head -1 | cut -d= -f2- || true)"
+  fi
+  if [ -z "$dryrun_cmd" ]; then
+    die "toolchain.md 未定義 FEATURE_DRYRUN_CMD ($TOOLCHAIN_FILE)。若本專案的框架無此能力，明確設為 '-' 以豁免；缺席不等於豁免"
+  elif [ "$dryrun_cmd" = "-" ]; then
+    dryrun_status="EXEMPT"
+  else
+    # ⚠️ 不可用 exit code。pytest --generate-missing 在「有缺步驟」時回 0、
+    # 「全部實作完」時回 3——反的。一律解析輸出。
+    local out
+    out="$(eval "${dryrun_cmd//\{FEATURE\}/$FEATURE}" 2>&1 || true)"
+    while IFS= read -r l; do
+      [ -n "$l" ] && undefined_steps+=("$l")
+    done < <(printf '%s\n' "$out" | grep -E 'is not defined|undefined' | sed 's/^[[:space:]]*//' | head -20 || true)
+  fi
+
+  local verdict="PASS" rc=0
+  if [ ${#modified[@]} -gt 0 ] || [ ${#removed[@]} -gt 0 ] || [ ${#added[@]} -gt 0 ] \
+     || [ ${#tag_changed[@]} -gt 0 ] || [ ${#binding_broken[@]} -gt 0 ] \
+     || [ ${#undefined_steps[@]} -gt 0 ]; then
+    verdict="FAIL"; rc=1
+  fi
+
+  cat <<JSON
+{
+  "feature": "$(json_escape "$FEATURE")",
+  "mode": "verify",
+  "baseline": "$(json_escape "$LOCK_FILE")",
+  "step_definition_check": "$dryrun_status",
+  "findings": {
+    "scenario_modified": $(json_array "${modified[@]+"${modified[@]}"}"),
+    "scenario_removed": $(json_array "${removed[@]+"${removed[@]}"}"),
+    "scenario_added_after_bind": $(json_array "${added[@]+"${added[@]}"}"),
+    "tag_changed": $(json_array "${tag_changed[@]+"${tag_changed[@]}"}"),
+    "binding_broken": $(json_array "${binding_broken[@]+"${binding_broken[@]}"}"),
+    "undefined_steps": $(json_array "${undefined_steps[@]+"${undefined_steps[@]}"}")
+  },
+  "verdict": "$verdict"
+}
+JSON
+  return $rc
+}
+
 case "$MODE" in
   check)
     run_check
@@ -430,10 +608,6 @@ case "$MODE" in
     run_bind
     ;;
   verify)
-    echo "TODO: git diff 檢查 .feature 在實作階段是否被修改（依 @SCN 歸因）" >&2
-    echo "TODO: 基準線來源未定，見 ADR-0008「未解決」" >&2
-    echo "TODO: 缺 step definition 需跑測試框架 dry-run，與技術棧綁定" >&2
-    echo "--- verify 尚未實作，回傳 2 以免被誤判為通過 ---" >&2
-    exit 2
+    run_verify
     ;;
 esac

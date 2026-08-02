@@ -78,14 +78,17 @@ cucumber-js / pytest-bdd / Cucumber-JVM / godog 皆可乾淨分家，
 **另一個代價：** `.feature` 在 spec 樹，測試框架與 CI 都要多指一個路徑。
 慣例寫在 `gherkin-guidelines.md` 的「測試框架設定」段。
 
-## 未解決
+## 未解決 → 已採用 scenarios.lock
 
-`trace-verify` 目前的做法是「比對 git diff 看 `.feature` 在實作階段有無變更」，
-這需要一個基準線 commit（bind 是哪一次），rebase 或 squash 之後會失準。
+> 原文：「`trace-verify` 目前的做法是比對 git diff…需要一個基準線 commit，
+> rebase 或 squash 之後會失準。評估過的替代方案是 `scenarios.lock`…
+> 本 ADR 不納入——先讓 boundary 保護跑一輪再決定。」
 
-評估過的替代方案是 `scenarios.lock`：`trace-bind` 產生，記錄每條 scenario
-的 ID 與內容雜湊，`trace-verify` 重算比對。優點是不依賴 git 歷史、
-訊號更精確（直接得到「SCN-042 內容變了」）。
+實作 `verify` 時確認 git 基準線無解（沒有可靠方式回答「bind 是哪個 commit」），
+因此採用 `scenarios.lock`：`trace-bind` 產生，記錄每條 scenario 的內容雜湊，
+`trace-verify` 重算比對。
 
-本 ADR 不納入——先讓 boundary 保護跑一輪，看 git diff 的基準線問題
-實際上有多痛再決定。
+雜湊前逐行去除前後空白並丟棄空行——實測重排版不誤報，內容變動才報。
+
+**boundary 保護仍然保留**，兩者是不同層次的防守：`kiro-review` 報
+「你不該碰那個檔案」，`trace-verify` 報「你把哪條驗收條件放寬了」。

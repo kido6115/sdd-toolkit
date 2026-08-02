@@ -34,6 +34,16 @@ scenario 增修之後重跑一次即可同步。
 只有 `X.Y` 編號的子任務會被綁定。`- [ ] 4.` 這種主任務是分組標頭，
 不是執行單位，跳過。
 
+## 同時產生 scenarios.lock
+
+寫入 `tasks.md` 的同時，也會產生 `.kiro/specs/<feature>/scenarios.lock`——
+記錄此刻每條 scenario 的內容雜湊，作為 `/trace-verify` 的基準線。
+
+**這個檔案要進版控**，而且不要手動修改。它不依賴 git 歷史，
+所以 rebase 或 squash 之後基準線仍然有效。
+
+scenario 有合理變動時，重跑 `/trace-bind` 即可同步 lock。
+
 ## 這一步是整套的樞紐
 
 `kiro-impl` 的 Feature Flag Protocol 本來就會做 RED→GREEN，

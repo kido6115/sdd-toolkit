@@ -58,7 +58,7 @@ scenario 用不含語意的流水號。見 [ADR-0007](docs/decisions/0007-scenar
 | **產出 Gherkin scenario** | 本 repo `scenario-write` |
 | **需求 ↔ scenario 雙向對應** | 本 repo `trace-check` |
 | **task 的 DoD 綁定 scenario** | 本 repo `trace-bind` |
-| **scenario 被竄改 / tag 遺失** | 本 repo `trace-verify` |
+| **scenario 被竄改 / 偷加 / 缺步驟實作** | 本 repo `trace-verify` |
 | **測試強度量化** | 本 repo `mutation-gate` |
 | **人工驗收** | 本 repo `manual-qa` |
 
@@ -106,12 +106,16 @@ steering 三份：`gherkin-guidelines.md`（`scenario-write` 指名）、
 | `grill-capture/SKILL.md` | ✅ 可用 |
 | `trace-check/scripts/trace.sh` — `check` | ✅ 可用（六種缺口偵測，`--include-design` 走 REQ） |
 | `trace-check/scripts/trace.sh` — `bind` | ✅ 可用（`--dry-run`、冪等） |
-| `trace-check/scripts/trace.sh` — `verify` | ⛔ stub，`exit 2` |
-| 其餘 SKILL.md | 內容完整，但依賴上面那支腳本 |
+| `trace-check/scripts/trace.sh` — `verify` | ✅ 可用（`scenarios.lock` 雜湊比對 + 步驟檢查） |
+
 | `mutation-gate/scripts/mutate.sh` | ✅ 可用（diff scope 自算，Python/mutmut 實測） |
 
 建議實作順序（不要一次全開）：
 
 1. `grill-capture` + `scenario-write` — 跑 2–3 個 feature，確認 agent 真的把 scenario 當測試寫
-2. `mutation-gate` — 門檻從 60% 開始往上調
-3. `trace-verify` + `manual-qa`（前者仍缺 git 基準線，見 ADR-0008）
+2. `trace-check` → `trace-bind` → `trace-verify` — 追溯鏈完整跑一輪
+3. `mutation-gate` — 門檻從 60% 開始往上調
+4. `manual-qa`
+
+`.kiro/scn-highwater` 與各 feature 的 `scenarios.lock` **要進版控**。
+前者保證 `@SCN` 永不重用，後者是 `trace-verify` 的基準線。

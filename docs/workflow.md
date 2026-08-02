@@ -179,6 +179,9 @@ trace-bind 是**寫入**不是檢查。映射走 cc-sdd 既有的 `_Requirements
 
 冪等——scenario 增修之後重跑一次即可同步，不會累積重複行。
 
+同時產生 `scenarios.lock`，記錄此刻每條 scenario 的內容雜湊，
+作為閘門 3 的基準線。**要進版控，不要手動改。**
+
 綁定後，每個 task 的 DoD 從「agent 說寫完了」變成
 「這兩條 scenario 由紅轉綠」——機器裁決，不是自我宣稱。
 
@@ -234,9 +237,19 @@ mutation test 的時間與 token。
 設計端到端對齊與架構漂移、跨 task 整合、boundary 稽核、殘留 TODO 與硬編密鑰。
 **這些 `trace-verify` 一律不重複做。**
 
-`trace-verify` 只抓 cc-sdd 結構上看不見的那一層：scenario 在 bind 之後被修改
-（尤其是斷言被放寬）、`.feature` 的 tag 被移除、綁定失效、scenario 沒有
-對應的 step definition。
+`trace-verify` 只抓 cc-sdd 結構上看不見的那一層，基準線來自 `scenarios.lock`
+而非 git（rebase 或 squash 之後 git 基準線會失準，雜湊不會）：
+
+| 發現 | 意義 |
+|---|---|
+| `scenario_modified` | **最重要**。內容在 bind 後被改，尤其是斷言被放寬 |
+| `scenario_removed` | 整條不見了 |
+| `scenario_added_after_bind` | 偷加了沒經核准的 scenario |
+| `tag_changed` | `@REQ` / `@BC` 被增刪 |
+| `binding_broken` | `_DoD:` 引用了已不存在的 SCN |
+| `undefined_steps` | 有 scenario 但沒人實作步驟 |
+
+雜湊前會正規化（逐行去空白、丟空行），所以**重排版不誤報，內容變動才報**。
 
 ---
 
