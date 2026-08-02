@@ -74,10 +74,15 @@ cp -r skills/* /path/to/project/.claude/skills/
 cp steering-custom/*.md /path/to/project/.kiro/steering/
 ```
 
+steering 只有兩份：`gherkin-guidelines.md`（`scenario-write` 指名）與
+`quality-gates.md`（`mutation-gate` 指名）。驗收紀律本身不進 steering，
+它由腳本與結構保證——說明見
+[docs/acceptance-discipline.md](docs/acceptance-discipline.md)。
+
 > ⚠️ `.kiro/steering/` **不會**被 Claude Code 自動載入——那是 Kiro IDE 靠
 > front-matter `inclusion: always` 做的事。在 Claude Code 底下只有 `CLAUDE.md`
-> 自動進 context。目前只有 `quality-gates.md` 有明確的載入路徑
-> （`mutation-gate/SKILL.md` 指名它），另外兩份還沒有。見 ADR-0006「未解決」。
+> 自動進 context。所以放進 steering 的東西必須有 skill 明確指名，
+> 否則寫了沒人讀。見 [ADR-0011](docs/decisions/0011-acceptance-discipline-to-docs.md)。
 
 不用 symlink 是刻意的：steering 是**專案記憶**，一個專案的門檻調整
 不該波及其他專案。
@@ -86,6 +91,7 @@ cp steering-custom/*.md /path/to/project/.kiro/steering/
 
 - [docs/workflow.md](docs/workflow.md) — 一個 feature 從頭到尾的完整路徑
 - [docs/example-walkthrough.md](docs/example-walkthrough.md) — 同一條需求走完五道閘門的實例
+- [docs/acceptance-discipline.md](docs/acceptance-discipline.md) — 七條紀律各由什麼機制保證，以及還有哪幾處裸露
 - [docs/decisions/](docs/decisions/) — 設計取捨的紀錄
 
 ## 狀態
@@ -106,5 +112,7 @@ cp steering-custom/*.md /path/to/project/.kiro/steering/
 建議實作順序（不要一次全開）：
 
 1. `grill-capture` + `scenario-write` — 跑 2–3 個 feature，確認 agent 真的把 scenario 當測試寫
-2. `mutation-gate` — 門檻從 60% 開始往上調
+2. 定技術棧 — 這一個決定同時解開 `mutate.sh`、scenario 的 tag-filter 執行、
+   以及 `verify` 的 step definition 檢查（[#2](https://github.com/kido6115/sdd-toolkit/issues/2)）
+3. `mutation-gate` — 門檻從 60% 開始往上調
 4. `trace-verify` + `manual-qa`

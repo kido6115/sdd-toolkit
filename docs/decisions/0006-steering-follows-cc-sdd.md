@@ -49,8 +49,15 @@
 - 沒有任何機制保證 `acceptance-discipline.md` 會被 agent 讀到。
   這是 ADR-0005 指出的既有問題，本 ADR 不解決，但也不再假裝 symlink 解決了它
 
-## 未解決
+## 未解決 → 已解決（ADR-0011）
 
-`.kiro/steering/` 在 Claude Code 底下的載入路徑仍然缺失。
-`quality-gates.md` 靠 `mutation-gate/SKILL.md` 明確指名而被讀到，
-`acceptance-discipline.md` 與 `gherkin-guidelines.md` 目前沒有對應的指名者。
+> 原文：「`.kiro/steering/` 在 Claude Code 底下的載入路徑仍然缺失。
+> `quality-gates.md` 靠 `mutation-gate/SKILL.md` 明確指名而被讀到，
+> `acceptance-discipline.md` 與 `gherkin-guidelines.md` 目前沒有對應的指名者。」
+
+`gherkin-guidelines.md` 已由 `scenario-write/SKILL.md` 指名（ADR-0009）。
+`acceptance-discipline.md` 移出 steering 改為 `docs/` 的設計說明
+（[ADR-0011](0011-acceptance-discipline-to-docs.md)）——逐條稽核後發現
+它沒有一條非得靠 steering 載入才能生效。
+
+由此得到的判準：**steering 只放「有 skill 指名、且內容不重複腳本行為」的東西。**

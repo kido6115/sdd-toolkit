@@ -10,7 +10,7 @@
 
 ```
 /kiro-steering                              # 產出 product.md / tech.md / structure.md
-cp steering-custom/*.md .kiro/steering/     # 補三份 cc-sdd 沒有的
+cp steering-custom/*.md .kiro/steering/     # 補兩份 cc-sdd 沒有的
 cp -r skills/* .claude/skills/
 ```
 
@@ -19,10 +19,15 @@ cp -r skills/* .claude/skills/
 | 檔案 | 來源 | 更新時機 |
 |---|---|---|
 | `product.md` `tech.md` `structure.md` | `/kiro-steering` | **持續同步**。cc-sdd 定位它是 bootstrap/sync，擴充既有系統時要重跑 |
-| `acceptance-discipline.md` `gherkin-guidelines.md` `quality-gates.md` | 本 toolkit 範本 | 複製後**由該專案自行維護**，不連回上游 |
+| `gherkin-guidelines.md` `quality-gates.md` | 本 toolkit 範本 | 複製後**由該專案自行維護**，不連回上游 |
 
 複製而非 symlink：steering 是專案記憶，一個專案的門檻調整不該波及其他專案。
 見 [ADR-0006](decisions/0006-steering-follows-cc-sdd.md)。
+
+只有這兩份進 steering，因為它們真的會被 skill 讀到（`scenario-write`
+指名前者、`mutation-gate` 指名後者）。驗收紀律本身不在 steering——
+它由腳本與結構保證，不由條文保證，說明見
+[acceptance-discipline.md](acceptance-discipline.md)。
 
 **只有 `cp` 那兩行是每專案一次。`/kiro-steering` 不是。**
 
@@ -41,8 +46,8 @@ sync 會偵測 code drift 並 additive 更新（既有的使用者修改不會�
 > ⚠️ `.kiro/steering/` **不會**被 Claude Code 自動載入。那是 Kiro IDE 靠
 > front-matter `inclusion: always` 做的事。在 Claude Code 底下，只有 `CLAUDE.md`
 > 會自動進 context；steering 必須由 skill 內文明確指名才會被讀到。
-> 目前只有 `quality-gates.md` 有載入路徑（`mutation-gate` 指名它）。
-> 見 [ADR-0005](decisions/0005-cc-sdd-overlap-audit.md)。
+> 這是「只放兩份進 steering」的原因——沒有指名者的檔案寫了沒人讀。
+> 見 [ADR-0011](decisions/0011-acceptance-discipline-to-docs.md)。
 
 ---
 
@@ -202,7 +207,7 @@ acceptance-first 由 cc-sdd 的 **Feature Flag Protocol** 強制：加旗標（�
 本 toolkit 在這一段的增量只剩一件事，但它是關鍵的一件：
 **cc-sdd 的紅燈是 implementer 自己寫的測試**——它自己挑的、自己知道能過的。
 `trace-bind` 把 DoD 換成「指定 scenario 由紅轉綠」，
-差別在紅燈的定義權在誰手上。見 `acceptance-discipline.md` 第 4 條。
+差別在紅燈的定義權在誰手上。見 [acceptance-discipline.md](acceptance-discipline.md) 第 4 條。
 
 這一段 implementer 該寫的是 **step definition**（在專案測試目錄），
 不是 `.feature`。後者唯讀，而且落在 boundary 之外——它去改就會被
